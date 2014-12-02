@@ -14,7 +14,8 @@ type RouteInfo struct {
 }
 
 type Interface interface {
-	ByName(string) RouteInfo
+	ByName(string) (RouteInfo, error)
+	MustByName(string) RouteInfo
 	URL(string, ...string) (string, error)
 }
 
@@ -29,8 +30,22 @@ func CreateMemoryIndex(routes ...RouteInfo) Interface {
 	return index
 }
 
-func (i memoryIndex) ByName(name string) RouteInfo {
-	return i[name]
+func (i memoryIndex) ByName(name string) (RouteInfo, error) {
+	r, ok :=  i[name]
+	if !ok {
+		return RouteInfo{}, fmt.Errorf("ByName: no route named %s", name)
+	}
+
+	return r, nil
+}
+
+func (i memoryIndex) MustByName(name string) RouteInfo {
+	r, err := i.ByName(name)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	return r
 }
 
 func (i memoryIndex) URL(name string, pairs ...string) (string, error) {
