@@ -2,7 +2,42 @@ package routeindex
 
 import (
 	"testing"
+	. "github.com/smartystreets/goconvey/convey"
 )
+
+func TestRetrieveRoute(t *testing.T) {
+	Convey("Given an index with some starting values", t, func() {
+		index := CreateMemoryIndex(
+		[]RouteInfo{
+			RouteInfo{
+				RouteString:  "/testroute1",
+				Name: "test1",
+			},
+			RouteInfo{
+				RouteString: "/testroute2/:category/:id",
+				Name: "test2",
+			},
+			RouteInfo{
+				RouteString: "/testroute3/:a",
+				Name: "test3",
+			},
+		}...)
+
+		Convey("When attempting to retrieve a route with the same name as one added", func() {
+			r := index.MustByName("test1")
+			Convey("The correct route should be returned", func() {
+				So(r.RouteString, ShouldEqual, "/testroute1")
+			})
+		})
+
+		Convey("When attempting to retrieve a route not present in the index", func() {
+			_, err := index.ByName("NotPresent")
+			Convey("An appropriate error should be returned", func() {
+				So(err, ShouldNotEqual, nil)
+			})
+		})
+	})
+}
 
 func TestURLCreation(t *testing.T) {
 	index := CreateMemoryIndex(
