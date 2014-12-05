@@ -2,7 +2,9 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"math/rand"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -210,7 +212,7 @@ func (e Expense) validate() error {
 func (e *Expense) Assign(userIds []int64) ([]*ExpenseAssignment, error) {
 	err := e.validate()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if e.Id <= 0 {
@@ -229,7 +231,7 @@ func (e *Expense) Assign(userIds []int64) ([]*ExpenseAssignment, error) {
 			amount += 1
 		}
 		ret = append(ret, &ExpenseAssignment{
-			UserId:    randIndexes[i],
+			UserId:    int64(randIndexes[i]),
 			Amount:    amount,
 			ExpenseId: e.Id,
 		})
@@ -239,6 +241,6 @@ func (e *Expense) Assign(userIds []int64) ([]*ExpenseAssignment, error) {
 
 func init() {
 	for _, c := range AllCategories() {
-		catMap[strings.ToLower(c.String())] = c
+		strToCategory[strings.ToLower(c.String())] = c
 	}
 }
