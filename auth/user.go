@@ -1,9 +1,10 @@
 package auth
 
 import (
+	"github.com/juju/errors"
+
 	"crypto/rand"
 	"encoding/base64"
-	"errors"
 	"net/http"
 	"strings"
 )
@@ -40,13 +41,13 @@ type UserManager struct {
 	hasher PasswordHasher
 	storer Storer
 	mailer Mailer
-	sess   SessionManager
+	sess   SessionStore
 }
 
 // NewUserManager creates an object which can be used to manipulate User objects.
-func NewUserManager(h PasswordHasher, s Storer, m Mailer, sm SessionManager) UserManager {
+func NewUserManager(h PasswordHasher, s Storer, m Mailer, sm SessionStore) UserManager {
 	if h == nil {
-		h = newBcryptHasher(0, 0, 0)
+		h = NewBcryptHasher(0, 0, 0)
 	} // Set default hasher with default values
 	return UserManager{h, s, m, sm}
 }
@@ -58,42 +59,47 @@ func (m UserManager) New(email, pw, confirmPw string, active, admin bool) (*User
 	email = strings.ToLower(email)
 
 	if pw != confirmPw {
-		return ErrPwMismatch
+		return nil, errors.Trace(ErrPwMismatch)
 	}
 
 	hash, err := m.hasher.Hash(pw)
 	if err != nil {
-		return nil, err
+		return nil, errors.Trace(err)
 	}
 	tok := ""
 	if !active {
-		if tok, err := generateToken(); err != nil {
-			return nil, err
+		if tok, err = generateToken(); err != nil {
+			return nil, errors.Trace(err)
 		}
 	}
 
 	return &User{0, email, hash, active, admin, tok}, nil
 }
 
-// SignupUser creates a new user, emails a signup email and saves the user.
-func (m UserManager) SignupUser(email, pw, confirmPw string, admin, active bool) (*User, error) {
-	u, err := New(email, pw, confirmPw, active, admin)
+// SignupUser creates a new user, emails a signup email, saves the user and logs them in.
+func (m UserManager) SignupUser(w http.ResponseWriter, r *http.Request, email, pw, confirmPw string, admin, active bool) (*User, error) {
+	u, err := m.New(email, pw, confirmPw, active, admin)
 	if err != nil {
-		return nil, err
+		return nil, errors.Trace(err)
 	}
 
 	if !u.Active {
 		if err = m.mailer.Signup(u); err != nil {
-			return nil, err
+			return nil, errors.Trace(err)
 		}
 	}
 
 	err = m.storer.Insert(u)
 	if err != nil {
-		return nil, err
+		return nil, errors.Trace(err)
 	}
 
-	// TODO: Create a session for the user and log them in
+	err = m.sess.LogUserIn(w, r, u)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	return u, nil
 }
 
 // ById obtains the user by their id field
@@ -115,24 +121,28 @@ func (m UserManager) ByToken(tok int64) (*User, error) {
 // Insert saves a new User. This cannot be called if the user has already
 // been saved.
 func (m UserManager) Insert(u *User) error {
-	return m.storer.Save(u)
+	return m.storer.Insert(u)
 }
 
 // Update saves any changes to the User object. This can only be called
 // if the user has already been saved.
 func (m UserManager) Update(u *User) error {
-	return m.storer.Save(u)
+	return m.storer.Update(u)
 }
 
 // FromSession retrieves the current user associated with the session
-func (m UserManager) FromSession(w http.ResponseWriter, h *http.Request) (*User, error) {
-	return m.sess.User(w, h)
+func (m UserManager) FromSession(w http.ResponseWriter, r *http.Request) (*User, error) {
+	return m.sess.User(w, r)
 }
 
 // Authenticate checks to see if the password supplies is the same as the
 // password that was used to create the hash
 func (m UserManager) Authenticate(u *User, pw string) error {
-	return hasher.Compare(u.PwHash, pw)
+	return m.hasher.Compare(u.PwHash, pw)
+}
+
+func (m UserManager) LogOut(w http.ResponseWriter, r *http.Request) error {
+	return m.sess.LogUserOut(w, r)
 }
 
 // Activate ensures that a user is able to log on.
@@ -158,7 +168,10 @@ func (m UserManager) SendSignupMail(u *User) error {
 	if u.Token == "" {
 		return ErrNoToken
 	}
-	return m.mailer.Signup(u)
+	if err := m.mailer.Signup(u); err != nil {
+		return err
+	}
+	return nil
 }
 
 // RequestPwReset sends a password reset email to the user and optionally
@@ -180,7 +193,11 @@ func (m UserManager) RequestPwReset(u *User, disableCurrentPw bool) error {
 		return err
 	}
 
-	return m.mailer.ResetPassword(u)
+	// Only send an email if the mailer is set
+	if err = m.mailer.PasswordReset(u); err != nil {
+		return err
+	}
+	return nil
 }
 
 // UpdatePw forces a password change. This can be useful for situations

@@ -1,7 +1,7 @@
 package postgrestore
 
 import (
-	"git.ianfross.com/expensetracker/models"
+	_ "git.ianfross.com/expensetracker/models"
 
 	"github.com/jmoiron/sqlx"
 
@@ -126,5 +126,3 @@ func (p postgresStore) MustDropSchema() {
 		p.db.MustExec(s)
 	}
 }
-
-func (p postgresStore)

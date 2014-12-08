@@ -5,15 +5,16 @@ import (
 )
 
 func TestPasswordValidation(t *testing.T) {
-	hasher := newBcryptHasher(2, 4, 4)
-	tests := []struct{
-			pw string
-			expected error}{
-				{pw: "a", expected: ErrPwTooShort},
-				{pw: "ab", expected: nil},
-				{pw: "abcd", expected: nil},
-				{pw: "abcde", expected: ErrPwTooLong},
-			}
+	hasher := NewBcryptHasher(2, 4, 4)
+	tests := []struct {
+		pw       string
+		expected error
+	}{
+		{pw: "a", expected: ErrPwTooShort},
+		{pw: "ab", expected: nil},
+		{pw: "abcd", expected: nil},
+		{pw: "abcde", expected: ErrPwTooLong},
+	}
 	for _, test := range tests {
 		if _, err := hasher.Hash(test.pw); err != test.expected {
 			t.Fatalf("Expected %v, got %v", test.expected, err)
@@ -22,15 +23,16 @@ func TestPasswordValidation(t *testing.T) {
 	}
 }
 
-func TestHashMatching(t * testing.T) {
-	hasher := newBcryptHasher(6, 20, 4)
+func TestHashMatching(t *testing.T) {
+	hasher := NewBcryptHasher(6, 20, 4)
 	tests := []struct {
-			pw1, pw2 string
-			expected error}{
-				{pw1: "matching", pw2: "matching", expected: nil},
-				{pw1: "notMatching", pw2: "different", expected: ErrIncorrectPw},
-				{pw1: "caseSensitive", pw2: "casesensitive", expected: ErrIncorrectPw},
-			}
+		pw1, pw2 string
+		expected error
+	}{
+		{pw1: "matching", pw2: "matching", expected: nil},
+		{pw1: "notMatching", pw2: "different", expected: ErrIncorrectPw},
+		{pw1: "caseSensitive", pw2: "casesensitive", expected: ErrIncorrectPw},
+	}
 	for _, test := range tests {
 		hash, err := hasher.Hash(test.pw1)
 		if err != nil {
@@ -68,21 +70,21 @@ func TestBcryptSalt(t *testing.T) {
 
 	testPasswords := []string{"abcdefg"}
 	for _, pw := range testPasswords {
-		hashes := make([]string, len(hashers), len(hashers))		
+		hashes := make([]string, len(hashers), len(hashers))
 		for j, hasher := range hashers {
 			hash, err := hasher.Hash(pw)
 			if err != nil {
 				t.Fatalf("Error during hash creation: %v (pw=%s)", err, pw)
 				return
 			}
-			hashes[j] = hash	
+			hashes[j] = hash
 		}
 		for j, hasher := range hashers {
 			err := hasher.Compare(hashes[j], pw)
 			if err != nil {
 				t.Fatalf("Error during sanity check, hasher %d failing compare, pw=%s, err=%s", j, pw, err)
 			}
-			
+
 		}
 		if hashes[0] == hashes[1] {
 			t.Fatal("Two passwords hashed produced the same hash (not salting properly)")

@@ -8,14 +8,14 @@ import (
 )
 
 const (
-	defaultMinLength = 6
-	defaultMaxLength = 64
+	defaultMinLength  = 6
+	defaultMaxLength  = 64
 	defaultBcryptCost = 10
 )
 
 var (
-	ErrPwTooShort = errors.New("Supplied password too short")
-	ErrPwTooLong  = errors.New("Supplied password too long")
+	ErrPwTooShort  = errors.New("Supplied password too short")
+	ErrPwTooLong   = errors.New("Supplied password too long")
 	ErrIncorrectPw = errors.New("Supplied password does not match the hash")
 )
 
@@ -24,16 +24,16 @@ type PasswordHasher interface {
 	Compare(string, string) error
 }
 
-
 type bcryptHasher struct {
-	minPwLen int
-	maxPwLen int
+	minPwLen   int
+	maxPwLen   int
 	bcryptCost int
-	
 }
 
 func defaultIfZero(value, def int) int {
-	if value == 0 { return def }
+	if value == 0 {
+		return def
+	}
 	return value
 }
 
@@ -48,7 +48,7 @@ func (b bcryptHasher) Hash(pw string) (string, error) {
 	if err := b.validatePw(pw); err != nil {
 		return "", err
 	}
-		
+
 	hash, err := bcrypt.GenerateFromPassword([]byte(pw), b.bcryptCost)
 	if err != nil {
 		return "", err
@@ -81,5 +81,3 @@ func (b bcryptHasher) Compare(hash, pw string) error {
 
 	return err
 }
-
-
