@@ -1,11 +1,9 @@
 package postgrestore
 
 import (
-	_ "git.ianfross.com/expensetracker/models"
-
 	"github.com/jmoiron/sqlx"
 
-	"database/sql"
+	"fmt"
 )
 
 const (
@@ -22,7 +20,7 @@ CREATE TYPE category_t as ENUM(
 	dropCategoriesStr = "DROP TYPE category_t;"
 
 	createUsersTableStr = `
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS users (
 	id                  SERIAL PRIMARY KEY,
 	email               VARCHAR(64) NOT NULL CHECK (email <> '') UNIQUE,
 	hashedPassword      VARCHAR(128),
@@ -32,46 +30,46 @@ CREATE TABLE users (
 	passwordChangeToken TEXT,
 	isNew               BOOLEAN default true);`
 
-	dropUsersTableStr = "DROP TABLE users;"
+	dropUsersTableStr = "DROP TABLE IF EXISTS users;"
 
 	createGroupsTableStr = `
-CREATE TABLE groups (
+CREATE TABLE IF NOT EXISTS groups (
 	id    SERIAL PRIMARY KEY,
 	name  TEXT NOT NULL);`
 
-	dropGroupsTableStr = "DROP TABLE groups;"
+	dropGroupsTableStr = "DROP TABLE IF EXISTS groups;"
 
 	createGroupsUsersTableStr = `
-CREATE TABLE groups_users(
+CREATE TABLE IF NOT EXISTS groups_users (
 	id        SERIAL PRIMARY KEY,
 	userId    INTEGER REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
 	groupId   INTEGER REFERENCES groups(id) ON UPDATE CASCADE ON DELETE CASCADE);`
 
-	dropGroupUserTableStr = "DROP TABLE groups_users;"
+	dropGroupUserTableStr = "DROP TABLE IF EXISTS groups_users;"
 
 	createExpensesTableStr = `
-CREATE TABLE expenses(
+CREATE TABLE IF NOT EXISTS expenses (
 	id        SERIAL PRIMARY KEY,
 	createdAt TIMESTAMP DEFAULT LOCALTIMESTAMP NOT NULL,
 	time      TIMESTAMP DEFAULT LOCALTIMESTAMP NOT NULL,
-	groupId   REFERENCES groups(id) ON UPDATE CASCADE ON DELETE CASCADE,
-	payerId   REFERENCES payers(id) ON UPDATE CASCADE ON DELETE CASCADE,
+	groupId   INTEGER REFERENCES groups(id) ON UPDATE CASCADE ON DELETE CASCADE,
+	payerId   INTEGER REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
 	category  category_t,
 	description TEXT);`
 
-	dropExpensesTableStr = "DROP TABLE expenses;"
+	dropExpensesTableStr = "DROP TABLE IF EXISTS expenses;"
 
 	createExpenseAssignmentsTableStr = `
-CREATE TABLE expense_assignments (
+CREATE TABLE IF NOT EXISTS expense_assignments (
 	id        SERIAL PRIMARY KEY,
 	userId    INTEGER REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
 	amount    INTEGER NOT NULL CHECK (amount >= 0),
-	expenseId INTEGERE REFERENCES expenses(id) ON UPDATE CASCADE ON DELETE CASCADE);`
+	expenseId INTEGER REFERENCES expenses(id) ON UPDATE CASCADE ON DELETE CASCADE);`
 
-	dropExpenseAssingmentsTableStr = "DROP TABLE expense_assignments;"
+	dropExpenseAssingmentsTableStr = "DROP TABLE IF EXISTS expense_assignments;"
 
 	createPaymentsTable = `
-CREATE TABLE payments (
+CREATE TABLE IF NOT EXISTS payments (
 	id         SERIAL PRIMARY KEY,
 	createdOn  TIMESTAMP DEFAULT LOCALTIMESTAMP NOT NULL,
 	amount     INTEGER NOT NULL CHECK (amount >= 0),
@@ -79,14 +77,13 @@ CREATE TABLE payments (
 	receiverId INTEGER REFERENCES users(id) CHECK (payerId <> receiverId),
 	circleID   INTEGER REFERENCES groups(id));`
 
-	dropPaymentsTableStr = "DROP TABLE payments;"
+	dropPaymentsTableStr = "DROP TABLE IF EXISTS payments;"
 )
 
 // user query format strings
 
 var (
-	createSchemaArr = []string{
-		createCategoriesStr,
+	createTablesArr = []string{
 		createUsersTableStr,
 		createGroupsTableStr,
 		createGroupsUsersTableStr,
@@ -96,33 +93,65 @@ var (
 	}
 
 	// Ensure reverse order to above
-	dropSchemaArr = []string{
+	dropTablesArr = []string{
 		dropPaymentsTableStr,
 		dropExpenseAssingmentsTableStr,
 		dropExpensesTableStr,
 		dropGroupUserTableStr,
 		dropGroupsTableStr,
 		dropUsersTableStr,
+	}
+
+	createTypesArr = []string{
+		createCategoriesStr,
+	}
+
+	dropTypesArr = []string{
 		dropCategoriesStr,
 	}
 )
 
 type postgresStore struct {
-	db *sqlx.DB
+	db    *sqlx.DB
+	debug bool
 }
 
-func Create(d *sql.DB) *postgresStore {
-	return &postgresStore{db: sqlx.NewDb(d, "postgres")}
+func Create(d *sqlx.DB) *postgresStore {
+	return &postgresStore{db: d}
 }
 
-func (p postgresStore) MustCreateSchema() {
-	for _, s := range createSchemaArr {
+func (p postgresStore) MustCreateTypes() {
+	for _, s := range createTypesArr {
+		if p.debug {
+			fmt.Println("Executing: " + s)
+		}
 		p.db.MustExec(s)
 	}
 }
 
-func (p postgresStore) MustDropSchema() {
-	for _, s := range dropSchemaArr {
+func (p postgresStore) MustDropTypes() {
+	for _, s := range dropTypesArr {
+		if p.debug {
+			fmt.Println("Executing: " + s)
+		}
+		p.db.MustExec(s)
+	}
+}
+
+func (p postgresStore) MustCreateTables() {
+	for _, s := range createTablesArr {
+		if p.debug {
+			fmt.Println("Executing: " + s)
+		}
+		p.db.MustExec(s)
+	}
+}
+
+func (p postgresStore) MustDropTables() {
+	for _, s := range dropTablesArr {
+		if p.debug {
+			fmt.Println("Executing: " + s)
+		}
 		p.db.MustExec(s)
 	}
 }
