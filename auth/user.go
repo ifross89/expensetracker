@@ -15,12 +15,12 @@ var (
 )
 
 type User struct {
-	Id     int64
-	Email  string
-	PwHash string
-	Admin  bool
-	Active bool
-	Token  string
+	Id     int64  `db:"id"`
+	Email  string `db:"email"`
+	PwHash string `db:"pw_hash"`
+	Admin  bool   `db:"admin"`
+	Active bool   `db:"active"`
+	Token  string `db:"token"`
 }
 
 type Storer interface {

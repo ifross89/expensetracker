@@ -1,8 +1,6 @@
 package postgrestore
 
 import (
-	_ "git.ianfross.com/expensetracker/models"
-
 	"github.com/jmoiron/sqlx"
 
 	"database/sql"
@@ -17,7 +15,8 @@ CREATE TYPE category_t as ENUM(
 	'household items',
 	'bills',
 	'presents',
-	'tickets');`
+	'tickets'
+);`
 
 	dropCategoriesStr = "DROP TYPE category_t;"
 
@@ -25,59 +24,64 @@ CREATE TYPE category_t as ENUM(
 CREATE TABLE users (
 	id                  SERIAL PRIMARY KEY,
 	email               VARCHAR(64) NOT NULL CHECK (email <> '') UNIQUE,
-	hashedPassword      VARCHAR(128),
-	isAdmin             BOOLEAN NOT NULL DEFAULT false,
-	isActive            BOOLEAN NOT NULL DEFAULT false,
-	signupToken         TEXT,
-	passwordChangeToken TEXT,
-	isNew               BOOLEAN default true);`
+	pw_hash             VARCHAR(128),
+	admin               BOOLEAN NOT NULL DEFAULT false,
+	active              BOOLEAN NOT NULL DEFAULT false,
+	token               TEXT
+);`
 
 	dropUsersTableStr = "DROP TABLE users;"
 
 	createGroupsTableStr = `
 CREATE TABLE groups (
 	id    SERIAL PRIMARY KEY,
-	name  TEXT NOT NULL);`
+	name  TEXT NOT NULL
+);`
 
 	dropGroupsTableStr = "DROP TABLE groups;"
 
 	createGroupsUsersTableStr = `
 CREATE TABLE groups_users(
-	id        SERIAL PRIMARY KEY,
-	userId    INTEGER REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
-	groupId   INTEGER REFERENCES groups(id) ON UPDATE CASCADE ON DELETE CASCADE);`
+	id         SERIAL PRIMARY KEY,
+	user_id    INTEGER REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
+	group_id   INTEGER REFERENCES groups(id) ON UPDATE CASCADE ON DELETE CASCADE,
+	admin      BOOLEAN NOT NULL DEFAULT FALSE
+);`
 
 	dropGroupUserTableStr = "DROP TABLE groups_users;"
 
 	createExpensesTableStr = `
 CREATE TABLE expenses(
-	id        SERIAL PRIMARY KEY,
-	createdAt TIMESTAMP DEFAULT LOCALTIMESTAMP NOT NULL,
-	time      TIMESTAMP DEFAULT LOCALTIMESTAMP NOT NULL,
-	groupId   REFERENCES groups(id) ON UPDATE CASCADE ON DELETE CASCADE,
-	payerId   REFERENCES payers(id) ON UPDATE CASCADE ON DELETE CASCADE,
-	category  category_t,
-	description TEXT);`
+	id          SERIAL PRIMARY KEY,
+	amount      INTEGER NOT NULL CHECK (amount >= 0),
+	created_at  TIMESTAMP DEFAULT LOCALTIMESTAMP NOT NULL,
+	group_id    REFERENCES groups(id) ON UPDATE CASCADE ON DELETE CASCADE,
+	payer_id    REFERENCES payers(id) ON UPDATE CASCADE ON DELETE CASCADE,
+	category    category_t,
+	description TEXT
+);`
 
 	dropExpensesTableStr = "DROP TABLE expenses;"
 
 	createExpenseAssignmentsTableStr = `
 CREATE TABLE expense_assignments (
-	id        SERIAL PRIMARY KEY,
-	userId    INTEGER REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
-	amount    INTEGER NOT NULL CHECK (amount >= 0),
-	expenseId INTEGERE REFERENCES expenses(id) ON UPDATE CASCADE ON DELETE CASCADE);`
+	id         SERIAL PRIMARY KEY,
+	user_id    INTEGER REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
+	amount     INTEGER NOT NULL CHECK (amount >= 0),
+	expense_id INTEGER REFERENCES expenses(id) ON UPDATE CASCADE ON DELETE CASCADE
+);`
 
 	dropExpenseAssingmentsTableStr = "DROP TABLE expense_assignments;"
 
 	createPaymentsTable = `
 CREATE TABLE payments (
-	id         SERIAL PRIMARY KEY,
-	createdOn  TIMESTAMP DEFAULT LOCALTIMESTAMP NOT NULL,
-	amount     INTEGER NOT NULL CHECK (amount >= 0),
-	payerId    INTEGER REFERENCES users(id) NOT NULL,
-	receiverId INTEGER REFERENCES users(id) CHECK (payerId <> receiverId),
-	circleID   INTEGER REFERENCES groups(id));`
+	id          SERIAL PRIMARY KEY,
+	created_at  TIMESTAMP DEFAULT LOCALTIMESTAMP NOT NULL,
+	amount      INTEGER NOT NULL CHECK (amount >= 0),
+	giver_id    INTEGER REFERENCES users(id) NOT NULL,
+	receiver_id INTEGER REFERENCES users(id) CHECK (payerId <> receiverId),
+	group_id    INTEGER REFERENCES groups(id)
+);`
 
 	dropPaymentsTableStr = "DROP TABLE payments;"
 )

@@ -176,22 +176,21 @@ func StringToCategory(s string) Category {
 var strToCategory = make(map[string]Category)
 
 type Expense struct {
-	Id          int64
-	Amount      Pence
-	PayerId     int64
-	GroupId     int64
-	Category    Category
-	Description string
-	Time        time.Time
-	CreatedAt   time.Time
-	Assignments []*ExpenseAssignment
+	Id          int64                `db:"id"`
+	Amount      Pence                `db:"amount"`
+	PayerId     int64                `db:"payer_id"`
+	GroupId     int64                `db:"group_id"`
+	Category    Category             `db:"category"`
+	Description string               `db:"description"`
+	CreatedAt   time.Time            `db:"created_at"`
+	Assignments []*ExpenseAssignment `db:"-"`
 }
 
 type ExpenseAssignment struct {
-	Id        int64
-	UserId    int64
-	Amount    Pence
-	ExpenseId int64
+	Id        int64 `db:"id"`
+	UserId    int64 `db:"user_id"`
+	Amount    Pence `db:"amount"`
+	ExpenseId int64 `db:"expense_id"`
 }
 
 func (e Expense) validate() error {

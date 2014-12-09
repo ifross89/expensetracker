@@ -14,10 +14,10 @@ type Group struct {
 }
 
 type UserGroupMap struct {
-	Id      int64
-	GroupId int64
-	UserId  int64
-	IsAdmin bool
+	Id      int64 `db:"id"`
+	GroupId int64 `db:"group_id"`
+	UserId  int64 `db:"user_id"`
+	Admin   bool  `db:"admin"`
 }
 
 type Payment struct {
