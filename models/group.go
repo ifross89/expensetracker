@@ -4,6 +4,8 @@ import (
 	"git.ianfross.com/expensetracker/auth"
 
 	"github.com/juju/errors"
+
+	"time"
 )
 
 type Group struct {
@@ -16,6 +18,15 @@ type UserGroupMap struct {
 	GroupId int64
 	UserId  int64
 	IsAdmin bool
+}
+
+type Payment struct {
+	Id         int64
+	GroupId    int64
+	Amount     Pence
+	GiverId    int64
+	ReceiverId int64
+	CreatedAt  time.Time
 }
 
 type Storer interface {
@@ -32,6 +43,12 @@ type Storer interface {
 	UpdateExpense(*Expense) error
 	ExpenseById(int64) (*Expense, error)
 	DeleteExpense(*Expense) error
+
+	// Payment storage functions
+	InsertPayment(*Payment) error
+	UpdatePayment(*Payment) error
+	DeletePayment(*Payment) error
+	PaymentById(int64) (*Payment, error)
 }
 
 type Manager struct {
@@ -94,4 +111,35 @@ func (m *Manager) UpdateExpense(e *Expense) error {
 func (m *Manager) DeleteExpense(e *Expense) error {
 	// Deletes all associated assignments
 	return errors.Trace(m.store.DeleteExpense(e))
+}
+
+func (m *Manager) InsertPayment(g *Group, giver, receiver int64, amount Pence) (*Payment, error) {
+	p := &Payment{
+		Amount:     amount,
+		GroupId:    g.Id,
+		GiverId:    giver,
+		ReceiverId: receiver,
+	}
+	err := m.store.InsertPayment(p)
+	if err != nil {
+		return nil, errors.Annotate(err, "Error inserting payment")
+	}
+
+	return p, nil
+}
+
+func (m *Manager) DeletePayment(p *Payment) error {
+	return errors.Trace(m.store.DeletePayment(p))
+}
+
+func (m *Manager) UpdatePayment(p *Payment) error {
+	return errors.Trace(m.store.UpdatePayment(p))
+}
+
+func (m *Manager) PaymentById(id int64) (*Payment, error) {
+	p, err := m.store.PaymentById(id)
+	if err != nil {
+		return nil, errors.Annotate(err, "Could not retrieve payment")
+	}
+	return p, nil
 }

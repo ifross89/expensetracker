@@ -13,6 +13,7 @@ import (
 var (
 	ErrNegativePence   = errors.New("Pence must be positive")
 	ErrInvalidMoneyStr = errors.New("Invalid string passed to PenceFromString")
+	ErrStructNotSaved  = errors.New("Invalid operation: struct must be saved first")
 )
 
 type Pence int64
@@ -218,7 +219,7 @@ func (e *Expense) Assign(userIds []int64) ([]*ExpenseAssignment, error) {
 	}
 
 	if e.Id <= 0 {
-		return nil, errors.New("Expense must be saved before it is assigned")
+		return nil, errors.Trace(ErrStructNotSaved)
 	}
 
 	numUsers := int64(len(userIds))
