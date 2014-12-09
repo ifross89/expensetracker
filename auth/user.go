@@ -39,7 +39,7 @@ type Mailer interface {
 
 type UserManager struct {
 	hasher PasswordHasher
-	storer Storer
+	store  Storer
 	mailer Mailer
 	sess   SessionStore
 }
@@ -89,7 +89,7 @@ func (m UserManager) SignupUser(w http.ResponseWriter, r *http.Request, email, p
 		}
 	}
 
-	err = m.storer.Insert(u)
+	err = m.store.Insert(u)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -104,30 +104,30 @@ func (m UserManager) SignupUser(w http.ResponseWriter, r *http.Request, email, p
 
 // ById obtains the user by their id field
 func (m UserManager) ById(id int64) (*User, error) {
-	return m.storer.UserById(id)
+	return m.store.UserById(id)
 }
 
 // ByEmail obtains the user from the email supplied
 func (m UserManager) ByEmail(email string) (*User, error) {
-	return m.storer.UserByEmail(email)
+	return m.store.UserByEmail(email)
 }
 
 // ByToken obtains the user from the generated token. This can be used for password
 // resets or signup links
 func (m UserManager) ByToken(tok int64) (*User, error) {
-	return m.storer.UserByToken(tok)
+	return m.store.UserByToken(tok)
 }
 
 // Insert saves a new User. This cannot be called if the user has already
 // been saved.
 func (m UserManager) Insert(u *User) error {
-	return m.storer.Insert(u)
+	return m.store.Insert(u)
 }
 
 // Update saves any changes to the User object. This can only be called
 // if the user has already been saved.
 func (m UserManager) Update(u *User) error {
-	return m.storer.Update(u)
+	return m.store.Update(u)
 }
 
 // FromSession retrieves the current user associated with the session
@@ -214,7 +214,7 @@ func (m UserManager) UpdatePw(u *User, pw, confirm string) error {
 	}
 
 	u.PwHash = hash
-	return m.storer.Update(u)
+	return m.store.Update(u)
 }
 
 // UserResetPw is used when a user requests a password update.
