@@ -1,7 +1,8 @@
 package models
 
 import (
-	"errors"
+	"github.com/juju/errors"
+
 	"fmt"
 	"math/rand"
 	"strconv"
@@ -30,7 +31,7 @@ func (p Pence) String() string {
 // Validate ensures that the pence is positive.
 func (p Pence) Validate() error {
 	if p <= 0 {
-		return fmt.Errorf("Pence must be positive, got %d.", p)
+		return ErrNegativePence
 	}
 	return nil
 }
@@ -182,6 +183,7 @@ type Expense struct {
 	Description string
 	Time        time.Time
 	CreatedAt   time.Time
+	Assignments []*ExpenseAssignment
 }
 
 type ExpenseAssignment struct {
