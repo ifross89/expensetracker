@@ -83,3 +83,15 @@ func (m *Manager) NewExpense(g *Group, amount Pence, payer int64, cat Category, 
 
 	return e, nil
 }
+
+func (m *Manager) UpdateExpense(e *Expense) error {
+	// the storage function needs to remove all the assignments
+	// and reassign the expense within a transaction. This
+	// is to ensure consistency within the database.
+	return errors.Trace(m.store.UpdateExpense(e))
+}
+
+func (m *Manager) DeleteExpense(e *Expense) error {
+	// Deletes all associated assignments
+	return errors.Trace(m.store.DeleteExpense(e))
+}
