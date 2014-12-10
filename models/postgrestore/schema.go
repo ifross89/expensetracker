@@ -7,6 +7,7 @@ import (
 )
 
 const (
+	setTimeZoneStr      = "SET TIME ZONE 'UTC';"
 	createCategoriesStr = `
 CREATE TYPE category_t as ENUM(
 	'groceries',
@@ -27,7 +28,8 @@ CREATE TABLE IF NOT EXISTS users (
 	pw_hash             VARCHAR(128),
 	admin               BOOLEAN NOT NULL DEFAULT false,
 	active              BOOLEAN NOT NULL DEFAULT false,
-	token               TEXT
+	token               TEXT,
+	created_at          TIMESTAMP DEFAULT LOCALTIMESTAMP NOT NULL
 );`
 
 	dropUsersTableStr = "DROP TABLE IF EXISTS users;"
@@ -119,41 +121,52 @@ var (
 type postgresStore struct {
 	db    *sqlx.DB
 	debug bool
+
+	// User statements
+	insertUserStmt  *sqlx.NamedStmt
+	userByEmailStmt *sqlx.NamedStmt
 }
 
-func Create(d *sqlx.DB) *postgresStore {
+func MustCreate(d *sqlx.DB) *postgresStore {
+	// Set the timezone for the store. This is needed for the logic here.
+	// This obviously assumes that noone else will change this.
+	// TODO: make this more robust.
+	db.MustExec(setTimeZoneStr)
 	return &postgresStore{db: d}
 }
 
-func (p postgresStore) MustCreateTypes() {
-	for _, s := range createTypesArr {
-		if p.debug {
-			fmt.Println("Executing: " + s)
-		}
-		p.db.MustExec(s)
+func (s *postgresStore) mustPrepareStmts() {
+	s.insertUserStmt = s.mustPrepareStmt(insertUserStr)
+	s.userByEmailStmt = s.mustPrepareStmt(userByEmailStr)
+}
+
+func (s *postgresStore) mustPrepareStmt(stmt string) *sqlx.NamedStmt {
+	return s.mustPrepare(s.db.PrepareNamed(stmt))
+}
+func (s *postgresStore) mustPrepare(stmt *sqlx.NamedStmt, err error) *sqlx.NamedStmt {
+	if err != nil {
+		panic("Error during prepare: " + err.Error())
 	}
+	return stmt
+}
+func (p postgresStore) MustCreateTypes() {
+	p.mustExecuteStatements(createTypesArr)
 }
 
 func (p postgresStore) MustDropTypes() {
-	for _, s := range dropTypesArr {
-		if p.debug {
-			fmt.Println("Executing: " + s)
-		}
-		p.db.MustExec(s)
-	}
+	p.mustExecuteStatements(dropTypesArr)
 }
 
 func (p postgresStore) MustCreateTables() {
-	for _, s := range createTablesArr {
-		if p.debug {
-			fmt.Println("Executing: " + s)
-		}
-		p.db.MustExec(s)
-	}
+	p.mustExecuteStatements(createTablesArr)
 }
 
 func (p postgresStore) MustDropTables() {
-	for _, s := range dropTablesArr {
+	p.mustExecuteStatements(dropTablesArr)
+}
+
+func (p postgresStore) mustExecuteStatements(statements []string) {
+	for _, s := range statements {
 		if p.debug {
 			fmt.Println("Executing: " + s)
 		}

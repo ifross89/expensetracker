@@ -7,16 +7,20 @@ import (
 	"testing"
 )
 
+var (
+	db = sqlx.MustOpen("postgres", "user=ian dbname=expense_test password=wedge89")
+	s  = MustCreate(db)
+)
+
 func TestSchemaCreate(t *testing.T) {
-	db := sqlx.MustOpen("postgres", "user=ian dbname=expense_test password=wedge89")
+	s.debug = true
+	defer func() { s.debug = false }()
 	err := db.Ping()
 	if err != nil {
 		t.Fatalf("Error pinging DB: %v", err)
 		return
 	}
 
-	s := Create(db)
-	s.debug = true
 	s.MustCreateTypes()
 	defer s.MustDropTypes()
 

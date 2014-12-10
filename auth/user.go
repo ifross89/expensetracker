@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"net/http"
 	"strings"
+	"time"
 )
 
 var (
@@ -15,12 +16,13 @@ var (
 )
 
 type User struct {
-	Id     int64  `db:"id"`
-	Email  string `db:"email"`
-	PwHash string `db:"pw_hash"`
-	Admin  bool   `db:"admin"`
-	Active bool   `db:"active"`
-	Token  string `db:"token"`
+	Id        int64      `db:"id"`
+	Email     string     `db:"email"`
+	PwHash    string     `db:"pw_hash"`
+	Admin     bool       `db:"admin"`
+	Active    bool       `db:"active"`
+	Token     string     `db:"token"`
+	CreatedAt *time.Time `db:"created_at"`
 }
 
 type Storer interface {
@@ -73,7 +75,7 @@ func (m UserManager) New(email, pw, confirmPw string, active, admin bool) (*User
 		}
 	}
 
-	return &User{0, email, hash, active, admin, tok}, nil
+	return &User{0, email, hash, active, admin, tok, nil}, nil
 }
 
 // SignupUser creates a new user, emails a signup email, saves the user and logs them in.
