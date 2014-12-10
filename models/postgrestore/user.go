@@ -12,6 +12,9 @@ INSERT INTO users (email, pw_hash, admin, active, token)
     VALUES(:email, :pw_hash, :admin, :active, :token) RETURNING *;`
 
 	userByEmailStr = "SELECT * FROM users WHERE email=:email;"
+
+	userByIdStr    = "SELECT * FROM users WHERE id=:id;"
+	userByTokenStr = "SELECT * FROM USERS WHERE token=:token;"
 )
 
 func (s *postgresStore) Insert(u *auth.User) error {
