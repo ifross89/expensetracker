@@ -3,6 +3,8 @@ package postgrestore
 import (
 	"git.ianfross.com/expensetracker/auth"
 
+	_ "github.com/juju/errors"
+
 	"testing"
 	"time"
 )
@@ -12,12 +14,13 @@ import (
 // in the database between test runs.runs
 func wrapDbTest(st *postgresStore, test func(*postgresStore, *testing.T)) func(*testing.T) {
 	return func(t *testing.T) {
-		st.debug = true
+		st.debug = false
 		defer func() { st.debug = false }()
 		// Create database schema
 		st.MustCreateTypes()
 		defer st.MustDropTypes()
 		st.MustCreateTables()
+		st.MustPrepareStmts()
 		defer st.MustDropTables()
 
 		// perform the test
@@ -25,7 +28,7 @@ func wrapDbTest(st *postgresStore, test func(*postgresStore, *testing.T)) func(*
 	}
 }
 
-func testUserInsert(st *postgresStore, t *testing.T) {
+func testUserCrud(st *postgresStore, t *testing.T) {
 	t.Log("Creating user")
 	u := &auth.User{
 		Email:  "hello@example.com",
@@ -52,11 +55,47 @@ func testUserInsert(st *postgresStore, t *testing.T) {
 		return
 	}
 	// check that the time is in the past, but not longer than 5s ago
-	if time.Now().UTC().Before(*(u.CreatedAt)) || (*(u.CreatedAt)).Add(5*time.Second).Before(time.Now().UTC()) {
-		t.Fatalf("CreatedAt time too different from now. Now=%v, CreatedAt=%v", time.Now().UTC(), *(u.CreatedAt))
+	if time.Now().UTC().Before(*(u.CreatedAt)) ||
+		(*(u.CreatedAt)).Add(5*time.Second).Before(time.Now().UTC()) {
+		t.Fatalf("CreatedAt time too different from now. Now=%v, CreatedAt=%v",
+			time.Now().UTC(), *(u.CreatedAt))
+	}
+
+	t.Log("Attempt to retrieve the user stored")
+	u2, err := st.UserByEmail("hello@example.com")
+	if err != nil {
+		t.Fatalf("Error retrieving user: %v", err)
+		return
+	}
+
+	if u.Id != u2.Id {
+		t.Fatalf("Id of users differ, want %d, got %d", u.Id, u2.Id)
+		return
+	}
+
+	if u.Email != u2.Email {
+		t.Fatalf("Email of users differ, want %s, got %s", u.Email, u2.Email)
+		return
+	}
+
+	if u.Token != u2.Token {
+		t.Fatalf("Token of users differ, want %s got %s", u.Token, u2.Token)
+		return
+	}
+
+	if u.Admin != u2.Admin {
+		t.Fatalf("Admin of users differ, want %v, got %v", u.Admin, u2.Admin)
+		return
+	}
+
+	t.Log("Attempt to retrieve a non-existant user")
+	u2, err = st.UserByEmail("noone@example.com")
+	if err == nil {
+		t.Fatalf("Expected no user found error, got nil")
+		return
 	}
 }
 
-func TestUserInsert(t *testing.T) {
-	wrapDbTest(s, testUserInsert)(t)
+func TestUserCrud(t *testing.T) {
+	wrapDbTest(s, testUserCrud)(t)
 }

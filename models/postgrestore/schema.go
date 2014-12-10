@@ -132,15 +132,19 @@ func MustCreate(d *sqlx.DB) *postgresStore {
 	// This obviously assumes that noone else will change this.
 	// TODO: make this more robust.
 	db.MustExec(setTimeZoneStr)
-	return &postgresStore{db: d}
+	s := &postgresStore{db: d}
+	return s
 }
 
-func (s *postgresStore) mustPrepareStmts() {
+func (s *postgresStore) MustPrepareStmts() {
 	s.insertUserStmt = s.mustPrepareStmt(insertUserStr)
 	s.userByEmailStmt = s.mustPrepareStmt(userByEmailStr)
 }
 
 func (s *postgresStore) mustPrepareStmt(stmt string) *sqlx.NamedStmt {
+	if s.debug {
+		fmt.Println("Preparing: " + stmt)
+	}
 	return s.mustPrepare(s.db.PrepareNamed(stmt))
 }
 func (s *postgresStore) mustPrepare(stmt *sqlx.NamedStmt, err error) *sqlx.NamedStmt {
@@ -149,27 +153,27 @@ func (s *postgresStore) mustPrepare(stmt *sqlx.NamedStmt, err error) *sqlx.Named
 	}
 	return stmt
 }
-func (p postgresStore) MustCreateTypes() {
-	p.mustExecuteStatements(createTypesArr)
+func (s postgresStore) MustCreateTypes() {
+	s.mustExecuteStatements(createTypesArr)
 }
 
-func (p postgresStore) MustDropTypes() {
-	p.mustExecuteStatements(dropTypesArr)
+func (s postgresStore) MustDropTypes() {
+	s.mustExecuteStatements(dropTypesArr)
 }
 
-func (p postgresStore) MustCreateTables() {
-	p.mustExecuteStatements(createTablesArr)
+func (s postgresStore) MustCreateTables() {
+	s.mustExecuteStatements(createTablesArr)
 }
 
-func (p postgresStore) MustDropTables() {
-	p.mustExecuteStatements(dropTablesArr)
+func (s postgresStore) MustDropTables() {
+	s.mustExecuteStatements(dropTablesArr)
 }
 
-func (p postgresStore) mustExecuteStatements(statements []string) {
-	for _, s := range statements {
-		if p.debug {
-			fmt.Println("Executing: " + s)
+func (s postgresStore) mustExecuteStatements(statements []string) {
+	for _, st := range statements {
+		if s.debug {
+			fmt.Println("Executing: " + st + "\n")
 		}
-		p.db.MustExec(s)
+		s.db.MustExec(st)
 	}
 }
