@@ -3,6 +3,7 @@ package postgrestore
 import (
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	. "github.com/smartystreets/goconvey/convey"
 
 	"testing"
 )
@@ -33,4 +34,10 @@ func TestSchemaCreate(t *testing.T) {
 	s.MustPrepareStmts()
 	s.MustDropTables()
 
+}
+
+func TestMustPrepare(t *testing.T) {
+	Convey("Attempt to prepare an invalid SQL string", t, func() {
+		So(func() { s.mustPrepareStmt("INVALID SQL") }, ShouldPanic)
+	})
 }
