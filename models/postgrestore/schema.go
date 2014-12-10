@@ -3,7 +3,7 @@ package postgrestore
 import (
 	"github.com/jmoiron/sqlx"
 
-	"database/sql"
+	"fmt"
 )
 
 const (
@@ -55,8 +55,8 @@ CREATE TABLE expenses(
 	id          SERIAL PRIMARY KEY,
 	amount      INTEGER NOT NULL CHECK (amount >= 0),
 	created_at  TIMESTAMP DEFAULT LOCALTIMESTAMP NOT NULL,
-	group_id    REFERENCES groups(id) ON UPDATE CASCADE ON DELETE CASCADE,
-	payer_id    REFERENCES payers(id) ON UPDATE CASCADE ON DELETE CASCADE,
+	group_id    INTEGER REFERENCES groups(id) ON UPDATE CASCADE ON DELETE CASCADE,
+	payer_id    INTEGER REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
 	category    category_t,
 	description TEXT
 );`
@@ -82,15 +82,13 @@ CREATE TABLE payments (
 	receiver_id INTEGER REFERENCES users(id) CHECK (payerId <> receiverId),
 	group_id    INTEGER REFERENCES groups(id)
 );`
-
 	dropPaymentsTableStr = "DROP TABLE payments;"
 )
 
 // user query format strings
 
 var (
-	createSchemaArr = []string{
-		createCategoriesStr,
+	createTablesArr = []string{
 		createUsersTableStr,
 		createGroupsTableStr,
 		createGroupsUsersTableStr,
@@ -100,33 +98,65 @@ var (
 	}
 
 	// Ensure reverse order to above
-	dropSchemaArr = []string{
+	dropTablesArr = []string{
 		dropPaymentsTableStr,
 		dropExpenseAssingmentsTableStr,
 		dropExpensesTableStr,
 		dropGroupUserTableStr,
 		dropGroupsTableStr,
 		dropUsersTableStr,
+	}
+
+	createTypesArr = []string{
+		createCategoriesStr,
+	}
+
+	dropTypesArr = []string{
 		dropCategoriesStr,
 	}
 )
 
 type postgresStore struct {
-	db *sqlx.DB
+	db    *sqlx.DB
+	debug bool
 }
 
-func Create(d *sql.DB) *postgresStore {
-	return &postgresStore{db: sqlx.NewDb(d, "postgres")}
+func Create(d *sqlx.DB) *postgresStore {
+	return &postgresStore{db: d}
 }
 
-func (p postgresStore) MustCreateSchema() {
-	for _, s := range createSchemaArr {
+func (p postgresStore) MustCreateTypes() {
+	for _, s := range createTypesArr {
+		if p.debug {
+			fmt.Println("Executing: " + s)
+		}
 		p.db.MustExec(s)
 	}
 }
 
-func (p postgresStore) MustDropSchema() {
-	for _, s := range dropSchemaArr {
+func (p postgresStore) MustDropTypes() {
+	for _, s := range dropTypesArr {
+		if p.debug {
+			fmt.Println("Executing: " + s)
+		}
+		p.db.MustExec(s)
+	}
+}
+
+func (p postgresStore) MustCreateTables() {
+	for _, s := range createTablesArr {
+		if p.debug {
+			fmt.Println("Executing: " + s)
+		}
+		p.db.MustExec(s)
+	}
+}
+
+func (p postgresStore) MustDropTables() {
+	for _, s := range dropTablesArr {
+		if p.debug {
+			fmt.Println("Executing: " + s)
+		}
 		p.db.MustExec(s)
 	}
 }
