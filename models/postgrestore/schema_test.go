@@ -8,10 +8,11 @@ import (
 )
 
 func TestSchemaCreate(t *testing.T) {
-	db := sqlx.MustOpen("postgres", "user=postgres dbname=expense_test password=wedge89")
+	db := sqlx.MustOpen("postgres", "user=ian dbname=expense_test password=wedge89")
 	err := db.Ping()
 	if err != nil {
 		t.Fatalf("Error pinging DB: %v", err)
+		return
 	}
 
 	s := Create(db)
@@ -20,5 +21,7 @@ func TestSchemaCreate(t *testing.T) {
 	defer s.MustDropTypes()
 
 	s.MustCreateTables()
+
 	s.MustDropTables()
+
 }
