@@ -11,11 +11,21 @@ import (
 )
 
 var (
-	ErrNegativePence   = errors.New("Pence must be positive")
+	// ErrNegativePence is returned when a Pence with a negative values is
+	// given to a function where it must not be negative
+	ErrNegativePence = errors.New("Pence must not be negative")
+
+	// ErrInvalidMoneyStr indicates that a string used to represent money
+	// could not be parsed and converted to Pence
 	ErrInvalidMoneyStr = errors.New("Invalid string passed to PenceFromString")
-	ErrStructNotSaved  = errors.New("Invalid operation: struct must be saved first")
+
+	// ErrStructNotSaved is returned when an operation is performed on a struct
+	// that must first be saved to the database
+	ErrStructNotSaved = errors.New("Invalid operation: struct must be saved first")
 )
 
+// Pence is an amount of money used in Payments & Expenses. There are 100 Pence
+// in a Pound (Sterling)
 type Pence int64
 
 // String formats pence into a human readable string
@@ -115,16 +125,33 @@ func poundsStrToPence(s string) (Pence, error) {
 	return Pence(ret * 100), nil
 }
 
+// Category is used to group expenses
 type Category int
 
 const (
+	// CategoryGroceries indicates an expense spend on groceries
+	// e.g. Boursin
 	CategoryGroceries Category = iota
+	// CategoryAlcohol indicates an expense spend on alcohol e.g. K Cider
 	CategoryAlcohol
+	// CategoryDrugs indicates an expense spend on medicine e.g cough
+	// medicine
 	CategoryDrugs
+	// CategoryHouseholdItems indicates an expense spend on household items
+	// e.g. An iron
 	CategoryHouseholdItems
+	// CategoryBills indicates an expense spend to on bill e.g. Netflix
 	CategoryBills
+	// CategoryPresents indicates an expense spent on presents e.g. singing
+	// lessons
 	CategoryPresents
+	// CategoryTickets indicates an expense spent on tickets e.g. Balls Deep
 	CategoryTickets
+	// CategoryMisc is used for expenses that do not fit into any of the
+	// other categories
+	CategoryMisc
+	// CategoryUnknown is not a category that should be used and indicates
+	// a logic error.
 	CategoryUnknown //Should always be last
 )
 
@@ -142,6 +169,8 @@ func (c Category) String() string {
 		return "Bills"
 	case CategoryPresents:
 		return "Presents"
+	case CategoryMisc:
+		return "Misc"
 	case CategoryTickets:
 		return "Tickets"
 	default:
@@ -149,6 +178,7 @@ func (c Category) String() string {
 	}
 }
 
+// Validate ensures the Category is valid
 func (c Category) Validate() error {
 	if c == CategoryUnknown {
 		return fmt.Errorf("Invalid category: %s.", c)
@@ -156,6 +186,7 @@ func (c Category) Validate() error {
 	return nil
 }
 
+// AllCategories returns a slice containing all the valid categories
 func AllCategories() []Category {
 	var ret []Category
 	for c := CategoryGroceries; c < CategoryUnknown; c++ {
@@ -164,6 +195,9 @@ func AllCategories() []Category {
 	return ret
 }
 
+// StringToCategory converts a string to the appropriate category.
+// This performs a lower case compare and strips any surrounding double quote
+// characters.
 func StringToCategory(s string) Category {
 	// Trim any quotes
 	ret, ok := strToCategory[strings.ToLower(strings.Trim(s, `"`))]
@@ -175,22 +209,25 @@ func StringToCategory(s string) Category {
 
 var strToCategory = make(map[string]Category)
 
+// Expense represents an expense made that is to be shared with the group
 type Expense struct {
-	Id          int64                `db:"id"`
+	ID          int64                `db:"id"`
 	Amount      Pence                `db:"amount"`
-	PayerId     int64                `db:"payer_id"`
-	GroupId     int64                `db:"group_id"`
+	PayerID     int64                `db:"payer_id"`
+	GroupID     int64                `db:"group_id"`
 	Category    Category             `db:"category"`
 	Description string               `db:"description"`
 	CreatedAt   time.Time            `db:"created_at"`
 	Assignments []*ExpenseAssignment `db:"-"`
 }
 
+// ExpenseAssignment represents the amount of money assigned to each user when
+// an expense is made.
 type ExpenseAssignment struct {
-	Id        int64 `db:"id"`
-	UserId    int64 `db:"user_id"`
+	ID        int64 `db:"id"`
+	UserID    int64 `db:"user_id"`
 	Amount    Pence `db:"amount"`
-	ExpenseId int64 `db:"expense_id"`
+	ExpenseID int64 `db:"expense_id"`
 }
 
 func (e Expense) validate() error {
@@ -204,20 +241,23 @@ func (e Expense) validate() error {
 		return err
 	}
 
-	if e.PayerId <= 0 || e.GroupId <= 0 {
+	if e.PayerID <= 0 || e.GroupID <= 0 {
 		return errors.New("PayerId and GroupId must be positive")
 	}
 
 	return nil
 }
 
+// Assign assigns an expense to the users given. If the amount is not equally
+// divisable by the number of users the expense applies to, then the
+// remaining amount is assigned at random.
 func (e *Expense) Assign(userIds []int64) ([]*ExpenseAssignment, error) {
 	err := e.validate()
 	if err != nil {
 		return nil, err
 	}
 
-	if e.Id <= 0 {
+	if e.ID <= 0 {
 		return nil, errors.Trace(ErrStructNotSaved)
 	}
 
@@ -230,12 +270,12 @@ func (e *Expense) Assign(userIds []int64) ([]*ExpenseAssignment, error) {
 	for i := int64(0); i < numUsers; i++ {
 		amount := average
 		if i < remainder {
-			amount += 1
+			amount++
 		}
 		ret = append(ret, &ExpenseAssignment{
-			UserId:    int64(randIndexes[i]),
+			UserID:    int64(randIndexes[i]),
 			Amount:    amount,
-			ExpenseId: e.Id,
+			ExpenseID: e.ID,
 		})
 	}
 	return ret, nil

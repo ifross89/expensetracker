@@ -88,10 +88,10 @@ func (m *Manager) RemoveUserFromGroup(g *Group, u *auth.User) error {
 func (m *Manager) NewExpense(g *Group, amount Pence, payer int64, cat Category, desc string, users []int64) (*Expense, error) {
 	e := &Expense{
 		Amount:      amount,
-		PayerId:     payer,
+		PayerID:     payer,
 		Category:    cat,
 		Description: desc,
-		GroupId:     g.Id,
+		GroupID:     g.Id,
 	}
 
 	if err := m.store.InsertExpense(e); err != nil {
