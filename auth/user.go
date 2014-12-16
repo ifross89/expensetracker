@@ -59,9 +59,13 @@ type UserManager struct {
 
 // NewUserManager creates an object which can be used to manipulate User objects.
 func NewUserManager(h PasswordHasher, s Storer, m Mailer, sm SessionStore) UserManager {
+	// Set default hasher with default values
 	if h == nil {
 		h = NewBcryptHasher(0, 0, 0)
-	} // Set default hasher with default values
+	}
+	if m == nil {
+		m = &nopMailer{}
+	}
 	return UserManager{h, s, m, sm}
 }
 

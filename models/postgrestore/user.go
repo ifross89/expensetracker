@@ -28,6 +28,7 @@ UPDATE users SET
 	deleteUserStr = "DELETE FROM users WHERE id=:id;"
 )
 
+// Insert saves a new user to the database
 func (s *postgresStore) Insert(u *auth.User) error {
 	if u.ID != 0 {
 		return auth.ErrAlreadySaved
@@ -39,6 +40,7 @@ func (s *postgresStore) Insert(u *auth.User) error {
 	return nil
 }
 
+// Update updated a user in the database
 func (s *postgresStore) Update(u *auth.User) error {
 	_, err := s.updateUserStmt.Exec(u)
 	if err != nil {
@@ -48,6 +50,7 @@ func (s *postgresStore) Update(u *auth.User) error {
 	return nil
 }
 
+// UserByToken retrieves a user by their unique token
 func (s *postgresStore) UserByToken(tok string) (*auth.User, error) {
 	var u = auth.User{Token: tok}
 	err := s.userByTokenStmt.Get(&u, u)
@@ -58,6 +61,7 @@ func (s *postgresStore) UserByToken(tok string) (*auth.User, error) {
 	return &u, nil
 }
 
+// UserByID retrieves a user by their ID
 func (s *postgresStore) UserByID(id int64) (*auth.User, error) {
 	var u = auth.User{ID: id}
 	err := s.userByIDStmt.Get(&u, u)
@@ -68,6 +72,8 @@ func (s *postgresStore) UserByID(id int64) (*auth.User, error) {
 	return &u, nil
 }
 
+// Delete removes a user from the database. If the user does not exist, then
+// an error is returned
 func (s *postgresStore) Delete(u *auth.User) error {
 	result, err := s.deleteUserStmt.Exec(u)
 	if err != nil {
@@ -82,6 +88,7 @@ func (s *postgresStore) Delete(u *auth.User) error {
 	return nil
 }
 
+// UserByEmail obtains a user by their email address
 func (s *postgresStore) UserByEmail(e string) (*auth.User, error) {
 	var u = auth.User{Email: e}
 	err := s.userByEmailStmt.Get(&u, u)
