@@ -44,9 +44,16 @@ func testUserCrud(st *postgresStore, t *testing.T) {
 		t.Fatalf("Error inserting user: %v", err)
 		return
 	}
+
 	t.Logf("User object after insertion: %#v", *u)
-	if u.Id == 0 {
+	if u.ID == 0 {
 		t.Fatalf("user ID == 0 after insert")
+		return
+	}
+
+	err = st.Insert(u)
+	if err == nil {
+		t.Fatalf("No error trying to insert user twice")
 		return
 	}
 
@@ -68,23 +75,8 @@ func testUserCrud(st *postgresStore, t *testing.T) {
 		return
 	}
 
-	if u.Id != u2.Id {
-		t.Fatalf("Id of users differ, want %d, got %d", u.Id, u2.Id)
-		return
-	}
-
-	if u.Email != u2.Email {
-		t.Fatalf("Email of users differ, want %s, got %s", u.Email, u2.Email)
-		return
-	}
-
-	if u.Token != u2.Token {
-		t.Fatalf("Token of users differ, want %s got %s", u.Token, u2.Token)
-		return
-	}
-
-	if u.Admin != u2.Admin {
-		t.Fatalf("Admin of users differ, want %v, got %v", u.Admin, u2.Admin)
+	if !isMatchingUser(t, u, u2) {
+		t.Fatalf("Users do not match: user1=%+v, user2=%+v\n", u, u2)
 		return
 	}
 
@@ -94,6 +86,80 @@ func testUserCrud(st *postgresStore, t *testing.T) {
 		t.Fatalf("Expected no user found error, got nil")
 		return
 	}
+
+	t.Log("Attempt to update a user")
+	u.Token = "NEW TOKEN"
+	err = st.Update(u)
+	if err != nil {
+		t.Fatalf("Error during user update: %v", err)
+		return
+	}
+
+	// Now try and retrieve the user by the token
+	u2, err = st.UserByToken("NEW TOKEN")
+	if err != nil {
+		t.Fatalf("Error getting updated user by token: %v", err)
+		return
+	}
+
+	if !isMatchingUser(t, u, u2) {
+		t.Fatalf("Users do not match: user1=%+v, user2=%+v\n", u, u2)
+		return
+	}
+
+	u2, err = st.UserByID(u.ID)
+	if err != nil {
+		t.Fatalf("Error retrieving user with ID=%d", u.ID)
+		return
+	}
+	if !isMatchingUser(t, u, u2) {
+		t.Fatalf("Users do not match: user1=%+v, user%+v\n", u, u2)
+	}
+
+	//Now delete the user
+	err = st.Delete(u)
+	if err != nil {
+		t.Fatalf("Error deleting user: %v", err)
+		return
+	}
+
+	// Now attempt to delete the user again
+	err = st.Delete(u2)
+	if err == nil {
+		t.Fatalf("No error when deleting a user twice.")
+		return
+	}
+
+	// Try and get the deleted user
+	_, err = st.UserByToken("NEW TOKEN")
+	if err == nil {
+		t.Fatalf("No error getting deleted user")
+	}
+
+}
+
+func isMatchingUser(t *testing.T, u1, u2 *auth.User) bool {
+	if u1.ID != u2.ID {
+		t.Logf("Id of users differ, want %d, got %d", u1.ID, u2.ID)
+		return false
+	}
+
+	if u1.Email != u2.Email {
+		t.Logf("Email of users differ, want %s, got %s", u1.Email, u2.Email)
+		return false
+	}
+
+	if u1.Token != u2.Token {
+		t.Logf("Token of users differ, want %s got %s", u1.Token, u2.Token)
+		return false
+	}
+
+	if u1.Admin != u2.Admin {
+		t.Logf("Admin of users differ, want %v, got %v", u1.Admin, u2.Admin)
+		return false
+	}
+
+	return true
 }
 
 func TestUserCrud(t *testing.T) {

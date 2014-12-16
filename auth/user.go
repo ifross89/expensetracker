@@ -11,12 +11,13 @@ import (
 )
 
 var (
-	ErrPwMismatch = errors.New("Passwords supplied do not match")
-	ErrNoToken    = errors.New("There is no token associated with the user")
+	ErrPwMismatch   = errors.New("Passwords supplied do not match")
+	ErrNoToken      = errors.New("There is no token associated with the user")
+	ErrAlreadySaved = errors.New("Cannot insert as user already saved")
 )
 
 type User struct {
-	Id        int64      `db:"id"`
+	ID        int64      `db:"id"`
 	Email     string     `db:"email"`
 	PwHash    string     `db:"pw_hash"`
 	Admin     bool       `db:"admin"`

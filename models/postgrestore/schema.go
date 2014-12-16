@@ -125,6 +125,10 @@ type postgresStore struct {
 	// User statements
 	insertUserStmt  *sqlx.NamedStmt
 	userByEmailStmt *sqlx.NamedStmt
+	userByIDStmt    *sqlx.NamedStmt
+	userByTokenStmt *sqlx.NamedStmt
+	updateUserStmt  *sqlx.NamedStmt
+	deleteUserStmt  *sqlx.NamedStmt
 }
 
 func MustCreate(d *sqlx.DB) *postgresStore {
@@ -139,6 +143,10 @@ func MustCreate(d *sqlx.DB) *postgresStore {
 func (s *postgresStore) MustPrepareStmts() {
 	s.insertUserStmt = s.mustPrepareStmt(insertUserStr)
 	s.userByEmailStmt = s.mustPrepareStmt(userByEmailStr)
+	s.userByIDStmt = s.mustPrepareStmt(userByIDStr)
+	s.userByTokenStmt = s.mustPrepareStmt(userByTokenStr)
+	s.deleteUserStmt = s.mustPrepareStmt(deleteUserStr)
+	s.updateUserStmt = s.mustPrepareStmt(updateUserStr)
 }
 
 func (s *postgresStore) mustPrepareStmt(stmt string) *sqlx.NamedStmt {
