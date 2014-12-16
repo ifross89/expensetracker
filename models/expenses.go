@@ -3,6 +3,7 @@ package models
 import (
 	"github.com/juju/errors"
 
+	"database/sql/driver"
 	"fmt"
 	"math/rand"
 	"strconv"
@@ -37,6 +38,26 @@ func (p Pence) String() string {
 	}
 
 	return fmt.Sprintf("%s£%01d.%02d", negativeString, p/100, p%100)
+}
+
+func (p *Pence) Scan(src interface{}) error {
+	if src == nil {
+		return errors.New("nil value cannot be assigned to Pence value")
+	}
+
+	n, ok := src.(int64)
+	if !ok {
+		return errors.New("cannot convert non-int64 to Pence")
+	}
+
+	fmt.Println("Pence.Scan: got int64 of ", n)
+	*p = Pence(n)
+	return nil
+}
+
+func (p Pence) Value() (driver.Value, error) {
+	fmt.Println("Pence.Value() called for Pence=", p)
+	return int64(p), nil
 }
 
 // Validate ensures that the pence is positive.

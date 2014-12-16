@@ -8,6 +8,10 @@ import (
 	"time"
 )
 
+var (
+	ErrAlreadySaved = errors.New("Cannot insert as model as already saved")
+)
+
 // Group represents a group of users in which the expenses are shared. An
 // example of this would be housemates sharing the expenses incurred while
 // living together, such as shared meals and communal home items.
@@ -31,12 +35,12 @@ type UserGroupMap struct {
 // group. This is typically performed when one person is at a deficit overall
 // to the group and another has paid a surplus with expenses.
 type Payment struct {
-	ID         int64
-	GroupID    int64
-	Amount     Pence
-	GiverID    int64
-	ReceiverID int64
-	CreatedAt  time.Time
+	ID         int64     `db:"id"`
+	GroupID    int64     `db:"group_id"`
+	Amount     Pence     `db:"amount"`
+	GiverID    int64     `db:"giver_id"`
+	ReceiverID int64     `db:"receiver_id"`
+	CreatedAt  time.Time `db:"created_at"`
 }
 
 // Storer is the interface required in order to perform the actions required

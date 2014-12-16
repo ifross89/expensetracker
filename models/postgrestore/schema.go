@@ -47,7 +47,8 @@ CREATE TABLE IF NOT EXISTS groups_users(
 	id         SERIAL PRIMARY KEY,
 	user_id    INTEGER REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
 	group_id   INTEGER REFERENCES groups(id) ON UPDATE CASCADE ON DELETE CASCADE,
-	admin      BOOLEAN NOT NULL DEFAULT FALSE
+	admin      BOOLEAN NOT NULL DEFAULT FALSE,
+	UNIQUE     (user_id, group_id)
 );`
 
 	dropGroupUserTableStr = "DROP TABLE IF EXISTS groups_users;"
@@ -129,6 +130,20 @@ type postgresStore struct {
 	userByTokenStmt *sqlx.NamedStmt
 	updateUserStmt  *sqlx.NamedStmt
 	deleteUserStmt  *sqlx.NamedStmt
+
+	// Group statements
+	insertGroupStmt         *sqlx.NamedStmt
+	updateGroupStmt         *sqlx.NamedStmt
+	deleteGroupStmt         *sqlx.NamedStmt
+	groupByIDStmt           *sqlx.NamedStmt
+	addUserToGroupStmt      *sqlx.NamedStmt
+	removeUserFromGroupStmt *sqlx.NamedStmt
+
+	// Payment statements
+	insertPaymentStmt *sqlx.NamedStmt
+	updatePaymentStmt *sqlx.NamedStmt
+	deletePaymentStmt *sqlx.NamedStmt
+	paymentByIDStmt   *sqlx.NamedStmt
 }
 
 func MustCreate(d *sqlx.DB) *postgresStore {
@@ -147,6 +162,18 @@ func (s *postgresStore) MustPrepareStmts() {
 	s.userByTokenStmt = s.mustPrepareStmt(userByTokenStr)
 	s.deleteUserStmt = s.mustPrepareStmt(deleteUserStr)
 	s.updateUserStmt = s.mustPrepareStmt(updateUserStr)
+
+	s.insertGroupStmt = s.mustPrepareStmt(insertGroupStr)
+	s.updateGroupStmt = s.mustPrepareStmt(updateGroupStr)
+	s.deleteGroupStmt = s.mustPrepareStmt(deleteGroupStr)
+	s.groupByIDStmt = s.mustPrepareStmt(groupByIDStr)
+	s.addUserToGroupStmt = s.mustPrepareStmt(addUserToGroupStr)
+	s.removeUserFromGroupStmt = s.mustPrepareStmt(removeUserFromGroupStr)
+
+	s.insertPaymentStmt = s.mustPrepareStmt(insertPaymentStr)
+	s.updatePaymentStmt = s.mustPrepareStmt(updatePaymentStr)
+	s.deletePaymentStmt = s.mustPrepareStmt(deletePaymentStr)
+	s.paymentByIDStmt = s.mustPrepareStmt(paymentByIDStr)
 }
 
 func (s *postgresStore) mustPrepareStmt(stmt string) *sqlx.NamedStmt {

@@ -13,7 +13,7 @@ var (
 	s  *postgresStore
 )
 
-func TestSetup(t *testing.T) {
+func init() {
 	db = sqlx.MustOpen("postgres", "user=ian dbname=expense_test password=wedge89")
 	s = MustCreate(db)
 }
