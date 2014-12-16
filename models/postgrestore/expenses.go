@@ -32,6 +32,14 @@ UPDATE payments SET
 WHERE id=:id;`
 	deletePaymentStr = `DELETE FROM payments WHERE id=:id;`
 	paymentByIDStr   = `SELECT * FROM payments WHERE id=:id;`
+
+	// Expense strings
+	insertExpeseStr = `
+INSERT INTO expenses (amount, payer_id, group_id, category, description)
+	VALUES (:amount, :payer_id, :group_id, :category) RETURNING *;`
+	insertExpenseAssignmentStr = `
+INSERT INTO expense_assignments (amount, user_id, expense_id)
+	VALUES (:amount, :user_id, :expense_id) RETURNING *;`
 )
 
 func (s *postgresStore) InsertGroup(g *models.Group) error {
@@ -171,4 +179,53 @@ func (s *postgresStore) PaymentByID(id int64) (*models.Payment, error) {
 	}
 	fmt.Printf("PaymentByID: got payment=%+v\n", p)
 	return &p, nil
+}
+
+func (s *postgresStore) InsertExpense(e *models.Expense, userIds []int64) error {
+	// Assign expense and commit everything to the db within the same transaction
+	if e.ID != 0 {
+		return models.ErrAlreadySaved
+	}
+
+	eas, err := e.Assign(userIds)
+	if err != nil {
+		return errors.Annotate(err, "Error assigning expense")
+	}
+
+	tx, err := db.Beginx()
+	if err != nil {
+		return errors.Annotate(err, "Could not create transaction")
+	}
+
+	stmt, err := tx.PrepareNamed(insertExpeseStr)
+	if err != nil {
+		_ = tx.Rollback()
+		return errors.Annotate(err, "Error preparing insert expense statement")
+	}
+	err = stmt.Get(e, e)
+	if err != nil {
+		_ = tx.Rollback()
+		return errors.Annotate(err, "Error inserting expense")
+	}
+
+	stmt, err = tx.PrepareNamed(insertExpenseAssignmentStr)
+	if err != nil {
+		_ = tx.Rollback()
+		return errors.Annotate(err, "Error preparing insert expense assigment statement")
+	}
+
+	for _, ea := range eas {
+		err = stmt.Get(ea, ea)
+		if err != nil {
+			_ = tx.Rollback()
+			return errors.Annotate(err, "Error inserting expense assignment")
+		}
+	}
+	// Sucessfully inserted expense and assignments.
+	err = tx.Commit()
+	if err != nil {
+		return errors.Annotate(err, "Error committing to database")
+	}
+
+	return nil
 }
