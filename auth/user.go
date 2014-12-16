@@ -40,6 +40,16 @@ type Mailer interface {
 	PasswordReset(*User) error
 }
 
+type nopMailer struct{}
+
+func (nopMailer) Signup(*User) error {
+	return nil
+}
+
+func (nopMailer) PasswordReset(*User) error {
+	return nil
+}
+
 type UserManager struct {
 	hasher PasswordHasher
 	store  Storer
