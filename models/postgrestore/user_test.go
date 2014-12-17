@@ -14,6 +14,15 @@ import (
 // in the database between test runs.runs
 func wrapDbTest(st *postgresStore, test func(*postgresStore, *testing.T)) func(*testing.T) {
 	return func(t *testing.T) {
+		defer func() {
+			if r := recover(); r != nil {
+				st.MustDropTables()
+				st.MustDropTypes()
+
+				t.Failed()
+			}
+		}()
+
 		st.debug = false
 		defer func() { st.debug = false }()
 		// Create database schema
@@ -25,6 +34,27 @@ func wrapDbTest(st *postgresStore, test func(*postgresStore, *testing.T)) func(*
 
 		// perform the test
 		test(st, t)
+	}
+}
+
+func wrapDbBenchmark(st *postgresStore, bench func(*postgresStore, *testing.B)) func(*testing.B) {
+	return func(b *testing.B) {
+		defer func() {
+			if r := recover(); r != nil {
+				st.MustDropTables()
+				st.MustDropTypes()
+
+				b.Failed()
+			}
+		}()
+
+		st.MustCreateTypes()
+		defer st.MustDropTypes()
+		st.MustCreateTables()
+		st.MustPrepareStmts()
+		defer st.MustDropTables()
+
+		bench(st, b)
 	}
 }
 

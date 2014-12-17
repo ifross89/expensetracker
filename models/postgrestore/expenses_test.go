@@ -101,6 +101,166 @@ func testPaymentCrud(st *postgresStore, t *testing.T) {
 	}
 }
 
+func testExpenseCrud(st *postgresStore, t *testing.T) {
+	g := &models.Group{
+		Name: "TestGroup",
+	}
+
+	err := st.InsertGroup(g)
+	if err != nil {
+		t.Fatalf("Error inserting group: %v", err)
+		return
+	}
+
+	u1 := &auth.User{
+		Email:  "u1@example.com",
+		PwHash: "hash",
+	}
+
+	u2 := &auth.User{
+		Email:  "u2@example.com",
+		PwHash: "hash",
+	}
+
+	err = st.Insert(u1)
+
+	if err != nil {
+		t.Fatalf("Could not insert user: %v", err)
+		return
+	}
+
+	err = st.Insert(u2)
+	if err != nil {
+		t.Fatalf("Could not insert user: %v", err)
+		return
+	}
+
+	err = st.AddUserToGroup(g, u1, false)
+	if err != nil {
+		t.Fatalf("Error adding user to group: %v", err)
+		return
+	}
+
+	err = st.AddUserToGroup(g, u2, false)
+	if err != nil {
+		t.Fatalf("error adding user to group: %v", err)
+		return
+	}
+
+	e1 := &models.Expense{
+		Category:    models.CategoryDrugs,
+		Amount:      100,
+		GroupID:     g.ID,
+		Description: "Test Expense 1",
+		PayerID:     u1.ID,
+	}
+
+	var allIDs []int64 = []int64{u1.ID, u2.ID}
+	t.Log(allIDs)
+	var oneID []int64 = []int64{u1.ID}
+
+	err = st.InsertExpense(e1, allIDs)
+	if err != nil {
+		t.Fatalf("error inserting expense: %v", err)
+		return
+	}
+
+	if len(e1.Assignments) != 2 {
+		t.Fatalf("Expected 2 assignments, got %d", len(e1.Assignments))
+		return
+	}
+
+	if e1.Assignments[0].Amount != 50 && e1.Assignments[1].Amount != 50 {
+		t.Fatalf("Assigned amounts should be 50, got: %d and %d", e1.Assignments[0].Amount, e1.Assignments[0].Amount)
+		return
+	}
+
+	err = st.UpdateExpense(e1, oneID)
+	if err != nil {
+		t.Fatalf("Error updating expense: %v", err)
+		return
+	}
+
+	if len(e1.Assignments) != 1 {
+		t.Fatalf("Expected 1 assignment, got %d", len(e1.Assignments))
+	}
+
+	e2 := &models.Expense{
+		Category:    models.CategoryPresents,
+		Amount:      100,
+		GroupID:     g.ID,
+		Description: "Test expense 2",
+		PayerID:     u2.ID,
+	}
+
+	err = st.InsertExpense(e2, allIDs)
+	if err != nil {
+		t.Fatalf("Error inserting expense: %v", err)
+		return
+	}
+
+	es, err := st.ExpensesByGroup(g)
+	if err != nil {
+		t.Fatalf("Error getting group expenses: %+v", err)
+		return
+	}
+
+	if len(es) != 2 {
+		t.Fatalf("Expected 2 expenses, got %d", len(es))
+		return
+	}
+
+	if es[0].Amount != 100 {
+		t.Fatalf("Expense should have Amount £1, got %s", es[0].Amount)
+		return
+	}
+
+	if es[1].Amount != 100 {
+		t.Fatalf("Expense should have Amount £1, got %s", es[1].Amount)
+		return
+	}
+	e1ID := e1.ID
+	err = st.DeleteExpense(e1)
+	if err != nil {
+		t.Fatalf("Error deleting expense: %v", err)
+		return
+	}
+
+	err = st.DeleteExpense(&models.Expense{ID: e1ID})
+	if err == nil {
+		t.Fatalf("Should have error when deleting deleted expense")
+		return
+	}
+
+	e3, err := st.ExpenseByID(e2.ID)
+	if err != nil {
+		t.Fatalf("Error getting expense: %v", err)
+		return
+	}
+
+	if e3.GroupID != e2.GroupID {
+		t.Fatalf("Expense group IDs do not match: %d vs %d", e2.GroupID, e3.GroupID)
+		return
+	}
+
+	_, err = st.ExpenseByID(e1ID)
+	if err == nil {
+		t.Fatalf("Expected error getting deleted expense")
+		return
+	}
+
+	es, err = st.ExpensesByGroup(g)
+	if err != nil {
+		t.Fatalf("Error getting group expenses :%v", err)
+		return
+	}
+
+	if len(es) != 1 {
+		t.Fatalf("Should be 1 expense in group, got %v", err)
+		return
+	}
+}
+
 func testGroupCrud(st *postgresStore, t *testing.T) {
 	t.Log("Creating group")
 	g := &models.Group{
@@ -206,10 +366,88 @@ func testGroupCrud(st *postgresStore, t *testing.T) {
 	}
 }
 
+func benchmarkExpenseCreation(st *postgresStore, b *testing.B) {
+	g := &models.Group{
+		Name: "Benchmark group",
+	}
+	st.InsertGroup(g)
+
+	u := &auth.User{
+		Email: "Benchmark User",
+	}
+
+	st.Insert(u)
+	st.AddUserToGroup(g, u, false)
+	b.ResetTimer()
+	uIDs := []int64{u.ID}
+	for i := 0; i < b.N; i++ {
+		st.InsertExpense(&models.Expense{
+			PayerID:     u.ID,
+			Amount:      models.Pence(int64(b.N)),
+			GroupID:     g.ID,
+			Category:    models.CategoryGroceries,
+			Description: "TEST EXPENSE",
+		}, uIDs)
+	}
+}
+
+func benchmarkExpenseRetrieval(st *postgresStore, b *testing.B) {
+	g := &models.Group{
+		Name: "Benchmark group",
+	}
+	st.InsertGroup(g)
+
+	u1 := &auth.User{
+		Email: "Benchmark User 1",
+	}
+
+	u2 := &auth.User{
+		Email: "Benchmark User 2",
+	}
+
+	u3 := &auth.User{
+		Email: "Benchmark User 3",
+	}
+
+	st.Insert(u1)
+	st.Insert(u2)
+	st.Insert(u3)
+	st.AddUserToGroup(g, u1, false)
+	st.AddUserToGroup(g, u2, false)
+	st.AddUserToGroup(g, u3, false)
+	uIDs := []int64{u1.ID, u2.ID, u3.ID}
+	for i := 0; i < 1000; i++ {
+		st.InsertExpense(&models.Expense{
+			PayerID:     uIDs[i%3],
+			Amount:      5000,
+			GroupID:     g.ID,
+			Category:    models.CategoryGroceries,
+			Description: "TEST EXPENSE",
+		}, uIDs)
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		st.ExpensesByGroup(g)
+	}
+}
+
+func BenchmarkExpenseCreation(b *testing.B) {
+	wrapDbBenchmark(s, benchmarkExpenseCreation)(b)
+}
+
+func BenchmarkExpenseRetrieval(b *testing.B) {
+	wrapDbBenchmark(s, benchmarkExpenseRetrieval)(b)
+}
+
 func TestGroupCrud(t *testing.T) {
 	wrapDbTest(s, testGroupCrud)(t)
 }
 
 func TestPaymentCrud(t *testing.T) {
 	wrapDbTest(s, testPaymentCrud)(t)
+}
+
+func TestExpenseCrud(t *testing.T) {
+	wrapDbTest(s, testExpenseCrud)(t)
 }

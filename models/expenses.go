@@ -23,6 +23,8 @@ var (
 	// ErrStructNotSaved is returned when an operation is performed on a struct
 	// that must first be saved to the database
 	ErrStructNotSaved = errors.New("Invalid operation: struct must be saved first")
+
+	ErrMustAssignToUsers = errors.New("There must be a positive number of users to assign an expense")
 )
 
 // Pence is an amount of money used in Payments & Expenses. There are 100 Pence
@@ -50,13 +52,11 @@ func (p *Pence) Scan(src interface{}) error {
 		return errors.New("cannot convert non-int64 to Pence")
 	}
 
-	fmt.Println("Pence.Scan: got int64 of ", n)
 	*p = Pence(n)
 	return nil
 }
 
 func (p Pence) Value() (driver.Value, error) {
-	fmt.Println("Pence.Value() called for Pence=", p)
 	return int64(p), nil
 }
 
@@ -199,6 +199,26 @@ func (c Category) String() string {
 	}
 }
 
+func (c Category) Value() (driver.Value, error) {
+	return strings.ToLower(c.String()), nil
+}
+
+func (c *Category) Scan(src interface{}) error {
+	if src == nil {
+		return errors.New("nil value cannot be assigned to Category")
+	}
+
+	v := src.([]uint8)
+	s := ""
+
+	for _, n := range v {
+		s += string(int(n))
+	}
+
+	*c = StringToCategory(s)
+	return nil
+}
+
 // Validate ensures the Category is valid
 func (c Category) Validate() error {
 	if c == CategoryUnknown {
@@ -249,6 +269,21 @@ type ExpenseAssignment struct {
 	UserID    int64 `db:"user_id"`
 	Amount    Pence `db:"amount"`
 	ExpenseID int64 `db:"expense_id"`
+	GroupID   int64 `db:"group_id"`
+}
+
+type ByExpense []*ExpenseAssignment
+
+func (a ByExpense) Len() int {
+	return len(a)
+}
+
+func (a ByExpense) Swap(i, j int) {
+	a[i], a[j] = a[j], a[i]
+}
+
+func (a ByExpense) Less(i, j int) bool {
+	return a[i].ExpenseID < a[j].ExpenseID
 }
 
 func (e Expense) validate() error {
@@ -273,6 +308,9 @@ func (e Expense) validate() error {
 // divisable by the number of users the expense applies to, then the
 // remaining amount is assigned at random.
 func (e *Expense) Assign(userIds []int64) ([]*ExpenseAssignment, error) {
+	if len(userIds) == 0 {
+		return nil, ErrMustAssignToUsers
+	}
 	err := e.validate()
 	if err != nil {
 		return nil, err
@@ -294,9 +332,10 @@ func (e *Expense) Assign(userIds []int64) ([]*ExpenseAssignment, error) {
 			amount++
 		}
 		ret = append(ret, &ExpenseAssignment{
-			UserID:    int64(randIndexes[i]),
+			UserID:    int64(userIds[randIndexes[i]]),
 			Amount:    amount,
 			ExpenseID: e.ID,
+			GroupID:   e.GroupID,
 		})
 	}
 	return ret, nil

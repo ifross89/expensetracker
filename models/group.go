@@ -55,6 +55,7 @@ type Storer interface {
 	GroupByID(int64) (*Group, error)
 	AddUserToGroup(*Group, *auth.User, bool) error
 	RemoveUserFromGroup(*Group, *auth.User) error
+	ExpensesByGroup(*Group) ([]*Expense, error)
 
 	// Expense storage functions
 	InsertExpense(*Expense, []int64) error // Need to fill in Id and Assignments

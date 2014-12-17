@@ -4,8 +4,10 @@ import (
 	"git.ianfross.com/expensetracker/auth"
 	"git.ianfross.com/expensetracker/models"
 
-	"fmt"
+	"github.com/jmoiron/sqlx"
 	"github.com/juju/errors"
+
+	"sort"
 )
 
 const (
@@ -36,10 +38,24 @@ WHERE id=:id;`
 	// Expense strings
 	insertExpeseStr = `
 INSERT INTO expenses (amount, payer_id, group_id, category, description)
-	VALUES (:amount, :payer_id, :group_id, :category) RETURNING *;`
+	VALUES (:amount, :payer_id, :group_id, :category, :description) RETURNING *;`
 	insertExpenseAssignmentStr = `
-INSERT INTO expense_assignments (amount, user_id, expense_id)
-	VALUES (:amount, :user_id, :expense_id) RETURNING *;`
+INSERT INTO expense_assignments (amount, user_id, expense_id, group_id)
+	VALUES (:amount, :user_id, :expense_id, :group_id) RETURNING *;`
+	deleteExpenseStr            = `DELETE FROM expenses WHERE id=:id;`
+	deleteExpenseAssignmentsStr = `DELETE FROM expense_assignments WHERE expense_id=:id;`
+	updateExpenseStr            = `
+UPDATE expenses set
+		amount=:amount,
+		payer_id=:payer_id,
+		group_id=:group_id,
+		category=:category
+	WHERE id=:id;`
+
+	expenseByIDStr          = `SELECT * FROM expenses WHERE id=:id;`
+	assingmentsByExpenseStr = `SELECT * from expense_assignments WHERE expense_id=:id;`
+	expensesByGroupStr      = `SELECT * FROM expenses WHERE group_id=:id;`
+	assignmentsByGroupStr   = `SELECT * FROM expense_assignments WHERE group_id=:id;`
 )
 
 func (s *postgresStore) InsertGroup(g *models.Group) error {
@@ -131,7 +147,6 @@ func (s *postgresStore) RemoveUserFromGroup(g *models.Group, u *auth.User) error
 }
 
 func (s *postgresStore) InsertPayment(p *models.Payment) error {
-	fmt.Printf("InsertPayment p=%+v\n", p)
 	err := s.insertPaymentStmt.Get(p, p)
 	if err != nil {
 		return errors.Annotate(err, "Error inserting payment")
@@ -140,7 +155,6 @@ func (s *postgresStore) InsertPayment(p *models.Payment) error {
 }
 
 func (s *postgresStore) UpdatePayment(p *models.Payment) error {
-	fmt.Printf("UpdatePayment p=%+v\n", p)
 	r, err := s.updatePaymentStmt.Exec(p)
 	if err != nil {
 		return errors.Annotate(err, "Could not update payment")
@@ -154,7 +168,6 @@ func (s *postgresStore) UpdatePayment(p *models.Payment) error {
 }
 
 func (s *postgresStore) DeletePayment(p *models.Payment) error {
-	fmt.Println("DeletePayment called with ID=", p.ID)
 	r, err := s.deletePaymentStmt.Exec(p)
 	if err != nil {
 		return errors.Annotate(err, "Error deleting payment")
@@ -177,22 +190,16 @@ func (s *postgresStore) PaymentByID(id int64) (*models.Payment, error) {
 	if err != nil {
 		return nil, errors.Annotate(err, "Error getting payment by ID")
 	}
-	fmt.Printf("PaymentByID: got payment=%+v\n", p)
 	return &p, nil
 }
 
-func (s *postgresStore) InsertExpense(e *models.Expense, userIds []int64) error {
+func (s *postgresStore) InsertExpense(e *models.Expense, userIDs []int64) error {
 	// Assign expense and commit everything to the db within the same transaction
 	if e.ID != 0 {
 		return models.ErrAlreadySaved
 	}
 
-	eas, err := e.Assign(userIds)
-	if err != nil {
-		return errors.Annotate(err, "Error assigning expense")
-	}
-
-	tx, err := db.Beginx()
+	tx, err := s.db.Beginx()
 	if err != nil {
 		return errors.Annotate(err, "Could not create transaction")
 	}
@@ -208,24 +215,225 @@ func (s *postgresStore) InsertExpense(e *models.Expense, userIds []int64) error 
 		return errors.Annotate(err, "Error inserting expense")
 	}
 
-	stmt, err = tx.PrepareNamed(insertExpenseAssignmentStr)
+	eas, err := e.Assign(userIDs)
 	if err != nil {
 		_ = tx.Rollback()
-		return errors.Annotate(err, "Error preparing insert expense assigment statement")
+		return errors.Annotate(err, "Error assigning expense")
 	}
 
-	for _, ea := range eas {
-		err = stmt.Get(ea, ea)
-		if err != nil {
-			_ = tx.Rollback()
-			return errors.Annotate(err, "Error inserting expense assignment")
-		}
+	err = s.insertExpenseAssignments(eas, tx)
+	if err != nil {
+		_ = tx.Rollback()
+		return errors.Trace(err)
 	}
+
 	// Sucessfully inserted expense and assignments.
 	err = tx.Commit()
 	if err != nil {
 		return errors.Annotate(err, "Error committing to database")
 	}
 
+	e.Assignments = eas
+
+	return nil
+}
+
+func (s *postgresStore) UpdateExpense(e *models.Expense, userIDs []int64) error {
+	if e.ID == 0 {
+		return models.ErrStructNotSaved
+	}
+
+	eas, err := e.Assign(userIDs)
+	if err != nil {
+		return errors.Annotate(err, "Could not assign expense")
+	}
+
+	tx, err := s.db.Beginx()
+	if err != nil {
+		return errors.Annotate(err, "Could not create transaction")
+	}
+
+	stmt, err := tx.PrepareNamed(deleteExpenseAssignmentsStr)
+	if err != nil {
+		_ = tx.Rollback()
+		return errors.Annotate(err, "Error preparing delete expense assignments statement")
+	}
+
+	r, err := stmt.Exec(e)
+	if err != nil {
+		_ = tx.Rollback()
+		return errors.Annotate(err, "Error deleting expense assignments")
+	}
+
+	n, _ := r.RowsAffected()
+	if n == 0 {
+		_ = tx.Rollback()
+		return errors.New("expense does not have any associated assignments")
+	}
+
+	stmt, err = tx.PrepareNamed(updateExpenseStr)
+	if err != nil {
+		_ = tx.Rollback()
+		return errors.Annotate(err, "Error preparing update expense statement")
+	}
+
+	r, err = stmt.Exec(e)
+	if err != nil {
+		_ = tx.Rollback()
+		return errors.Annotate(err, "Error updating expense")
+	}
+
+	err = s.insertExpenseAssignments(eas, tx)
+	if err != nil {
+		_ = tx.Rollback()
+		return errors.Trace(err)
+	}
+
+	// updated expense and created new assignments
+	err = tx.Commit()
+	if err != nil {
+		return errors.Annotate(err, "error committing expense update")
+	}
+
+	e.Assignments = eas
+	return nil
+}
+
+func (s *postgresStore) insertExpenseAssignments(eas []*models.ExpenseAssignment, tx *sqlx.Tx) error {
+	stmt, err := tx.PrepareNamed(insertExpenseAssignmentStr)
+	if err != nil {
+		return errors.Annotate(err, "Error preparing insert expense assigment statement")
+	}
+
+	for _, ea := range eas {
+		err = stmt.Get(ea, ea)
+		if err != nil {
+			return errors.Annotate(err, "Error inserting expense assignment")
+		}
+	}
+
+	return nil
+}
+
+func (s *postgresStore) ExpenseByID(id int64) (*models.Expense, error) {
+	e := models.Expense{
+		ID: id,
+	}
+
+	tx, err := s.db.Beginx()
+	if err != nil {
+		return nil, errors.Annotate(err, "could not create transaction")
+	}
+
+	stmt, err := tx.PrepareNamed(expenseByIDStr)
+	if err != nil {
+		_ = tx.Rollback()
+		return nil, errors.Annotate(err, "could not create expense by ID statement")
+	}
+
+	err = stmt.Get(&e, e)
+	if err != nil {
+		_ = tx.Rollback()
+		return nil, errors.Annotate(err, "could not get expense by id")
+	}
+
+	var eas []*models.ExpenseAssignment
+	stmt, err = tx.PrepareNamed(assingmentsByExpenseStr)
+	if err != nil {
+		_ = tx.Rollback()
+		return nil, errors.Annotate(err, "could not prepare assignments by expense statement")
+	}
+
+	err = stmt.Select(&eas, e)
+	if err != nil {
+		_ = tx.Rollback()
+		return nil, errors.Annotate(err, "could not get assignments for expense")
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, errors.Annotate(err, "could not commit")
+	}
+
+	e.Assignments = eas
+
+	return &e, nil
+
+}
+
+func (s *postgresStore) ExpensesByGroup(g *models.Group) ([]*models.Expense, error) {
+	var es []*models.Expense
+	var eas []*models.ExpenseAssignment
+	tx, err := s.db.Beginx()
+	if err != nil {
+		return nil, errors.Annotate(err, "could not create transaction")
+	}
+
+	stmt, err := tx.PrepareNamed(expensesByGroupStr)
+	if err != nil {
+		_ = tx.Rollback()
+		return nil, errors.Trace(err)
+	}
+
+	err = stmt.Select(&es, g)
+	if err != nil {
+		_ = tx.Rollback()
+		return nil, errors.Trace(err)
+	}
+
+	stmt, err = tx.PrepareNamed(assignmentsByGroupStr)
+	if err != nil {
+		_ = tx.Rollback()
+		return nil, errors.Trace(err)
+	}
+
+	err = stmt.Select(&eas, g)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	// got expenses and assignments
+	err = tx.Commit()
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	// Pair the assignments with the expense
+	for _, e := range es {
+		e.Assignments = make([]*models.ExpenseAssignment, 0, 0)
+	}
+
+	// Assignments need to be sorted by group
+	sort.Sort(models.ByExpense(eas))
+
+	eIndex := int64(-1)
+	eID := int64(-1)
+	for _, ea := range eas {
+		if eID != ea.ExpenseID {
+			//
+			eIndex++
+			eID = ea.ExpenseID
+		}
+
+		es[eIndex].Assignments = append(es[eIndex].Assignments, ea)
+	}
+
+	return es, nil
+}
+
+func (s *postgresStore) DeleteExpense(e *models.Expense) error {
+	r, err := s.deleteExpenseStmt.Exec(e)
+
+	// Delete expense deletes all associated assignments due to CASCADE
+	if err != nil {
+		return errors.Annotatef(err, "Could not delete expense with ID=%d", e.ID)
+	}
+
+	n, _ := r.RowsAffected()
+	if n == 0 {
+		return errors.New("Expense does not exist")
+	}
+
+	e.ID = 0
 	return nil
 }

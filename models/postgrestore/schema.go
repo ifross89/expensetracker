@@ -71,7 +71,8 @@ CREATE TABLE IF NOT EXISTS expense_assignments (
 	id         SERIAL PRIMARY KEY,
 	user_id    INTEGER REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
 	amount     INTEGER NOT NULL CHECK (amount >= 0),
-	expense_id INTEGER REFERENCES expenses(id) ON UPDATE CASCADE ON DELETE CASCADE
+	expense_id INTEGER REFERENCES expenses(id) ON UPDATE CASCADE ON DELETE CASCADE,
+	group_id   INTEGER REFERENCES groups(id) ON UPDATE CASCADE ON DELETE CASCADE
 );`
 
 	dropExpenseAssingmentsTableStr = "DROP TABLE IF EXISTS expense_assignments;"
@@ -144,6 +145,9 @@ type postgresStore struct {
 	updatePaymentStmt *sqlx.NamedStmt
 	deletePaymentStmt *sqlx.NamedStmt
 	paymentByIDStmt   *sqlx.NamedStmt
+
+	// Expense statements
+	deleteExpenseStmt *sqlx.NamedStmt
 }
 
 func MustCreate(d *sqlx.DB) *postgresStore {
@@ -174,6 +178,8 @@ func (s *postgresStore) MustPrepareStmts() {
 	s.updatePaymentStmt = s.mustPrepareStmt(updatePaymentStr)
 	s.deletePaymentStmt = s.mustPrepareStmt(deletePaymentStr)
 	s.paymentByIDStmt = s.mustPrepareStmt(paymentByIDStr)
+
+	s.deleteExpenseStmt = s.mustPrepareStmt(deleteExpenseStr)
 }
 
 func (s *postgresStore) mustPrepareStmt(stmt string) *sqlx.NamedStmt {
