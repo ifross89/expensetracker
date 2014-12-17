@@ -252,24 +252,24 @@ var strToCategory = make(map[string]Category)
 
 // Expense represents an expense made that is to be shared with the group
 type Expense struct {
-	ID          int64                `db:"id"`
-	Amount      Pence                `db:"amount"`
-	PayerID     int64                `db:"payer_id"`
-	GroupID     int64                `db:"group_id"`
-	Category    Category             `db:"category"`
-	Description string               `db:"description"`
-	CreatedAt   time.Time            `db:"created_at"`
-	Assignments []*ExpenseAssignment `db:"-"`
+	ID          int64                `db:"id" json:"id"`
+	Amount      Pence                `db:"amount" json:"amount"`
+	PayerID     int64                `db:"payer_id" json:"payerId"`
+	GroupID     int64                `db:"group_id" json:"groupId"`
+	Category    Category             `db:"category" json:"category"`
+	Description string               `db:"description" json:"category"`
+	CreatedAt   time.Time            `db:"created_at" json:"category"`
+	Assignments []*ExpenseAssignment `db:"-" json:"assignments"`
 }
 
 // ExpenseAssignment represents the amount of money assigned to each user when
 // an expense is made.
 type ExpenseAssignment struct {
-	ID        int64 `db:"id"`
-	UserID    int64 `db:"user_id"`
-	Amount    Pence `db:"amount"`
-	ExpenseID int64 `db:"expense_id"`
-	GroupID   int64 `db:"group_id"`
+	ID        int64 `db:"id" json:"id"`
+	UserID    int64 `db:"user_id" json:"userId"`
+	Amount    Pence `db:"amount" json:"amount"`
+	ExpenseID int64 `db:"expense_id" json: "expenseId"`
+	GroupID   int64 `db:"group_id" json:"groupId"`
 }
 
 type ByExpense []*ExpenseAssignment
