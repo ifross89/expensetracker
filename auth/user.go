@@ -17,19 +17,19 @@ var (
 )
 
 type User struct {
-	ID        int64      `db:"id"`
-	Email     string     `db:"email"`
-	PwHash    string     `db:"pw_hash"`
-	Admin     bool       `db:"admin"`
-	Active    bool       `db:"active"`
-	Token     string     `db:"token"`
-	CreatedAt *time.Time `db:"created_at"`
+	ID        int64      `db:"id" json:"id"`
+	Email     string     `db:"email" json:"email"`
+	PwHash    string     `db:"pw_hash" json:"-"`
+	Admin     bool       `db:"admin" json:"-"`
+	Active    bool       `db:"active" json:"active"`
+	Token     string     `db:"token" json:"token"`
+	CreatedAt *time.Time `db:"created_at" json:"createdAt"`
 }
 
 type Storer interface {
 	UserByEmail(string) (*User, error)
-	UserById(int64) (*User, error)
-	UserByToken(int64) (*User, error)
+	UserByID(int64) (*User, error)
+	UserByToken(string) (*User, error)
 	Delete(*User) error
 	Insert(*User) error
 	Update(*User) error
@@ -58,7 +58,7 @@ type UserManager struct {
 }
 
 // NewUserManager creates an object which can be used to manipulate User objects.
-func NewUserManager(h PasswordHasher, s Storer, m Mailer, sm SessionStore) UserManager {
+func NewUserManager(h PasswordHasher, s Storer, m Mailer, sm SessionStore) *UserManager {
 	// Set default hasher with default values
 	if h == nil {
 		h = NewBcryptHasher(0, 0, 0)
@@ -66,7 +66,8 @@ func NewUserManager(h PasswordHasher, s Storer, m Mailer, sm SessionStore) UserM
 	if m == nil {
 		m = &nopMailer{}
 	}
-	return UserManager{h, s, m, sm}
+
+	return &UserManager{h, s, m, sm}
 }
 
 // New creates a new user. Note that this only creates the user, it does
@@ -121,7 +122,7 @@ func (m UserManager) SignupUser(w http.ResponseWriter, r *http.Request, email, p
 
 // ById obtains the user by their id field
 func (m UserManager) ById(id int64) (*User, error) {
-	return m.store.UserById(id)
+	return m.store.UserByID(id)
 }
 
 // ByEmail obtains the user from the email supplied
@@ -131,7 +132,7 @@ func (m UserManager) ByEmail(email string) (*User, error) {
 
 // ByToken obtains the user from the generated token. This can be used for password
 // resets or signup links
-func (m UserManager) ByToken(tok int64) (*User, error) {
+func (m UserManager) ByToken(tok string) (*User, error) {
 	return m.store.UserByToken(tok)
 }
 
@@ -149,7 +150,7 @@ func (m UserManager) Update(u *User) error {
 
 // FromSession retrieves the current user associated with the session
 func (m UserManager) FromSession(w http.ResponseWriter, r *http.Request) (*User, error) {
-	return m.sess.User(w, r)
+	return m.sess.User(w, r, m.store)
 }
 
 // Authenticate checks to see if the password supplies is the same as the

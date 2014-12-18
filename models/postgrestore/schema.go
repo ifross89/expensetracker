@@ -2,6 +2,7 @@ package postgrestore
 
 import (
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 
 	"fmt"
 )
@@ -154,7 +155,7 @@ func MustCreate(d *sqlx.DB) *postgresStore {
 	// Set the timezone for the store. This is needed for the logic here.
 	// This obviously assumes that noone else will change this.
 	// TODO: make this more robust.
-	db.MustExec(setTimeZoneStr)
+	d.MustExec(setTimeZoneStr)
 	s := &postgresStore{db: d}
 	return s
 }

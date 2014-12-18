@@ -18,7 +18,7 @@ var (
 )
 
 type SessionStore interface {
-	User(http.ResponseWriter, *http.Request) (*User, error)
+	User(http.ResponseWriter, *http.Request, Storer) (*User, error)
 	LogUserOut(http.ResponseWriter, *http.Request) error
 	LogUserIn(http.ResponseWriter, *http.Request, *User) error
 }
