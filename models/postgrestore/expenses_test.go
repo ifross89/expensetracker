@@ -12,6 +12,7 @@ func testPaymentCrud(st *postgresStore, t *testing.T) {
 	u := &auth.User{
 		Email:  "hello@example.com",
 		PwHash: "hash",
+		Name:   "TEST",
 	}
 
 	err := st.Insert(u)
@@ -24,6 +25,7 @@ func testPaymentCrud(st *postgresStore, t *testing.T) {
 	u2 := &auth.User{
 		Email:  "hello2@example.com",
 		PwHash: "hash",
+		Name:   "TEST",
 	}
 
 	err = st.Insert(u2)
@@ -115,11 +117,13 @@ func testExpenseCrud(st *postgresStore, t *testing.T) {
 	u1 := &auth.User{
 		Email:  "u1@example.com",
 		PwHash: "hash",
+		Name:   "TEST",
 	}
 
 	u2 := &auth.User{
 		Email:  "u2@example.com",
 		PwHash: "hash",
+		Name:   "TEST",
 	}
 
 	err = st.Insert(u1)
@@ -313,6 +317,7 @@ func testGroupCrud(st *postgresStore, t *testing.T) {
 		Token:  "token",
 		Active: true,
 		Admin:  false,
+		Name:   "TEST",
 	}
 
 	err = st.AddUserToGroup(g, u, true)
@@ -399,14 +404,17 @@ func benchmarkExpenseRetrieval(st *postgresStore, b *testing.B) {
 
 	u1 := &auth.User{
 		Email: "Benchmark User 1",
+		Name:  "TEST",
 	}
 
 	u2 := &auth.User{
 		Email: "Benchmark User 2",
+		Name:  "TEST",
 	}
 
 	u3 := &auth.User{
 		Email: "Benchmark User 3",
+		Name:  "TEST",
 	}
 
 	st.Insert(u1)

@@ -16,6 +16,11 @@ const (
 	updateGroupStr = `UPDATE groups SET name=:name WHERE id=:id;`
 	deleteGroupStr = `DELETE FROM groups where id=:id;`
 	groupByIDStr   = `SELECT * FROM groups where id=:id;`
+	groupByUserStr = `
+SELECT * FROM groups
+	INNER JOIN groups_users
+		ON groups_users.group_id=groups.id
+	WHERE groups_users.user_id=:id;`
 
 	// Strings involving user group mappings
 	addUserToGroupStr      = `INSERT INTO groups_users (group_id, user_id) VALUES (:group_id, :user_id) RETURNING *;`
@@ -108,6 +113,16 @@ func (s *postgresStore) GroupByID(id int64) (*models.Group, error) {
 	}
 
 	return &g, nil
+}
+
+func (s *postgresStore) GroupsByUser(u *auth.User) ([]*models.Group, error) {
+	var groups []*models.Group
+	err := s.removeUserFromGroupStmt.Select(&groups, u)
+	if err != nil {
+		return nil, errors.Annotate(err, "Error getting user's groups")
+	}
+
+	return groups, nil
 }
 
 func (s *postgresStore) AddUserToGroup(g *models.Group, u *auth.User, admin bool) error {

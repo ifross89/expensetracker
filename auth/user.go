@@ -23,6 +23,7 @@ type User struct {
 	Admin     bool       `db:"admin" json:"-"`
 	Active    bool       `db:"active" json:"active"`
 	Token     string     `db:"token" json:"token"`
+	Name      string     `db:"name" json:"name"`
 	CreatedAt *time.Time `db:"created_at" json:"createdAt"`
 }
 
@@ -72,7 +73,7 @@ func NewUserManager(h PasswordHasher, s Storer, m Mailer, sm SessionStore) *User
 
 // New creates a new user. Note that this only creates the user, it does
 // not save the user.
-func (m UserManager) New(email, pw, confirmPw string, active, admin bool) (*User, error) {
+func (m UserManager) New(name, email, pw, confirmPw string, active, admin bool) (*User, error) {
 	// Lower case all email addresses, for consistency.
 	email = strings.ToLower(email)
 
@@ -91,12 +92,12 @@ func (m UserManager) New(email, pw, confirmPw string, active, admin bool) (*User
 		}
 	}
 
-	return &User{0, email, hash, active, admin, tok, nil}, nil
+	return &User{0, email, hash, active, admin, tok, name, nil}, nil
 }
 
 // SignupUser creates a new user, emails a signup email, saves the user and logs them in.
-func (m UserManager) SignupUser(w http.ResponseWriter, r *http.Request, email, pw, confirmPw string, admin, active bool) (*User, error) {
-	u, err := m.New(email, pw, confirmPw, active, admin)
+func (m UserManager) SignupUser(w http.ResponseWriter, r *http.Request, name, email, pw, confirmPw string, admin, active bool) (*User, error) {
+	u, err := m.New(name, email, pw, confirmPw, active, admin)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}

@@ -19,6 +19,7 @@ type Storer interface {
 	AddUserToGroup(*Group, *auth.User, bool) error
 	RemoveUserFromGroup(*Group, *auth.User) error
 	ExpensesByGroup(*Group) ([]*Expense, error)
+	GroupsByUser(*auth.User) ([]*Group, error)
 
 	// Expense storage functions
 	InsertExpense(*Expense, []int64) error // Need to fill in Id and Assignments
@@ -56,6 +57,15 @@ func (m Manager) NewGroup(name string) (*Group, error) {
 // of the group.
 func (m Manager) DeleteGroup(g *Group) error {
 	return errors.Trace(m.store.DeleteGroup(g))
+}
+
+func (m Manager) UserGroups(u *auth.User) ([]*Group, error) {
+	groups, err := m.store.GroupsByUser(u)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	return groups, nil
 }
 
 // UpdateGroup saves any changes made to the group object. If the ID has been

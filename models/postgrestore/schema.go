@@ -30,6 +30,7 @@ CREATE TABLE IF NOT EXISTS users (
 	admin               BOOLEAN NOT NULL DEFAULT false,
 	active              BOOLEAN NOT NULL DEFAULT false,
 	token               TEXT,
+	name                TEXT NOT NULL CHECK (name <> ''),
 	created_at          TIMESTAMP DEFAULT LOCALTIMESTAMP NOT NULL
 );`
 
@@ -140,6 +141,7 @@ type postgresStore struct {
 	groupByIDStmt           *sqlx.NamedStmt
 	addUserToGroupStmt      *sqlx.NamedStmt
 	removeUserFromGroupStmt *sqlx.NamedStmt
+	groupsByUserStmt        *sqlx.NamedStmt
 
 	// Payment statements
 	insertPaymentStmt *sqlx.NamedStmt
@@ -172,6 +174,7 @@ func (s *postgresStore) MustPrepareStmts() {
 	s.updateGroupStmt = s.mustPrepareStmt(updateGroupStr)
 	s.deleteGroupStmt = s.mustPrepareStmt(deleteGroupStr)
 	s.groupByIDStmt = s.mustPrepareStmt(groupByIDStr)
+	s.groupsByUserStmt = s.mustPrepareStmt(groupByUserStr)
 	s.addUserToGroupStmt = s.mustPrepareStmt(addUserToGroupStr)
 	s.removeUserFromGroupStmt = s.mustPrepareStmt(removeUserFromGroupStr)
 

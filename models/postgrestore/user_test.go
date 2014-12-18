@@ -66,6 +66,7 @@ func testUserCrud(st *postgresStore, t *testing.T) {
 		Admin:  true,
 		Active: true,
 		Token:  "TOKEN",
+		Name:   "TEST",
 	}
 
 	t.Log("Attempting to insert user into store")

@@ -10,8 +10,8 @@ import (
 
 const (
 	insertUserStr = `
-INSERT INTO users (email, pw_hash, admin, active, token)
-    VALUES(:email, :pw_hash, :admin, :active, :token) RETURNING *;`
+INSERT INTO users (name, email, pw_hash, admin, active, token)
+    VALUES(:name, :email, :pw_hash, :admin, :active, :token) RETURNING *;`
 
 	userByEmailStr = "SELECT * FROM users WHERE email=:email;"
 
@@ -19,6 +19,7 @@ INSERT INTO users (email, pw_hash, admin, active, token)
 	userByTokenStr = "SELECT * FROM USERS WHERE token=:token;"
 	updateUserStr  = `
 UPDATE users SET
+		name=:name,
 		email=:email,
 		pw_hash=:pw_hash,
 		admin=:admin,
