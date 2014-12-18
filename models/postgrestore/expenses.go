@@ -17,7 +17,7 @@ const (
 	deleteGroupStr = `DELETE FROM groups where id=:id;`
 	groupByIDStr   = `SELECT * FROM groups where id=:id;`
 	groupByUserStr = `
-SELECT * FROM groups
+SELECT groups.* FROM groups
 	INNER JOIN groups_users
 		ON groups_users.group_id=groups.id
 	WHERE groups_users.user_id=:id;`
@@ -117,7 +117,7 @@ func (s *postgresStore) GroupByID(id int64) (*models.Group, error) {
 
 func (s *postgresStore) GroupsByUser(u *auth.User) ([]*models.Group, error) {
 	var groups []*models.Group
-	err := s.removeUserFromGroupStmt.Select(&groups, u)
+	err := s.groupsByUserStmt.Select(&groups, u)
 	if err != nil {
 		return nil, errors.Annotate(err, "Error getting user's groups")
 	}

@@ -19,7 +19,7 @@ func init() {
 }
 
 func TestSchemaCreate(t *testing.T) {
-	s.debug = true
+	s.debug = false
 	defer func() { s.debug = false }()
 	err := db.Ping()
 	if err != nil {

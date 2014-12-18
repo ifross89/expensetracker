@@ -344,6 +344,22 @@ func testGroupCrud(st *postgresStore, t *testing.T) {
 		return
 	}
 
+	groups, err := st.GroupsByUser(u)
+	if err != nil {
+		t.Fatalf("Error added to group %v", err)
+		return
+	}
+
+	if len(groups) != 1 {
+		t.Fatalf("Expected 1 group, got %f", len(groups))
+		return
+	}
+
+	if groups[0].Name != "Updated group name" {
+		t.Fatalf("Expected group name as 'Updated group name', but got %s", groups[0].Name)
+		return
+	}
+
 	err = st.RemoveUserFromGroup(g, u)
 	if err != nil {
 		t.Fatalf("Error removing user from group: %v", err)
