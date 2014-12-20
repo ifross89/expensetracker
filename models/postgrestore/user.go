@@ -16,7 +16,7 @@ INSERT INTO users (name, email, pw_hash, admin, active, token)
 	userByEmailStr = "SELECT * FROM users WHERE email=:email;"
 
 	userByIDStr    = "SELECT * FROM users WHERE id=:id;"
-	userByTokenStr = "SELECT * FROM USERS WHERE token=:token;"
+	userByTokenStr = "SELECT * FROM users WHERE token=:token;"
 	updateUserStr  = `
 UPDATE users SET
 		name=:name,
@@ -27,10 +27,22 @@ UPDATE users SET
 		token=:token
 	WHERE id=:id;`
 	deleteUserStr = "DELETE FROM users WHERE id=:id;"
+	usersStr      = `SELECT * FROM users;`
 )
+
+func (s *postgresStore) Users() ([]*auth.User, error) {
+	var us []*auth.User = make([]*auth.User, 0, 0)
+	err := s.db.Select(&us, usersStr)
+	if err != nil {
+		return nil, errors.Trace(err)
+	}
+
+	return us, nil
+}
 
 // Insert saves a new user to the database
 func (s *postgresStore) Insert(u *auth.User) error {
+	fmt.Println("USER:", u)
 	if u.ID != 0 {
 		return auth.ErrAlreadySaved
 	}

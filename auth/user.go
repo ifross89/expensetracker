@@ -31,6 +31,7 @@ type Storer interface {
 	UserByEmail(string) (*User, error)
 	UserByID(int64) (*User, error)
 	UserByToken(string) (*User, error)
+	Users() ([]*User, error)
 	Delete(*User) error
 	Insert(*User) error
 	Update(*User) error
@@ -93,6 +94,10 @@ func (m UserManager) New(name, email, pw, confirmPw string, active, admin bool) 
 	}
 
 	return &User{0, email, hash, active, admin, tok, name, nil}, nil
+}
+
+func (m UserManager) Users() ([]*User, error) {
+	return m.store.Users()
 }
 
 // SignupUser creates a new user, emails a signup email, saves the user and logs them in.

@@ -3,6 +3,7 @@ package main
 import (
 	"git.ianfross.com/expensetracker/auth"
 	"git.ianfross.com/expensetracker/env"
+	"git.ianfross.com/expensetracker/handlers"
 	"git.ianfross.com/expensetracker/models"
 	"git.ianfross.com/expensetracker/models/postgrestore"
 
@@ -22,10 +23,12 @@ func main() {
 	sessionStore := auth.NewCookieSessionStore(
 		[]byte("new-authentication-key"),
 		[]byte("new-encryption-key"))
+
 	um := auth.NewUserManager(nil, store, nil, sessionStore)
 	m := models.NewManager(store)
+	store.MustPrepareStmts()
 
-	e := env.Env{
+	e := &env.Env{
 		m,
 		um,
 		env.Config{
@@ -39,9 +42,12 @@ func main() {
 		io.Copy(w, f)
 		f.Close()
 	})
-	//router.GET("/:name/", CreateHandlerWithEnv(&e, CreateTestHandler))
-	router.ServeFiles("/static/*filepath", http.Dir("static"))
 
+	router.ServeFiles("/static/*filepath", http.Dir("static"))
+	router.GET("/admin/users", CreateHandlerWithEnv(e, handlers.CreateAdminUsersGETHandler))
+	router.POST("/admin/users", CreateHandlerWithEnv(e, handlers.CreateAdminUsersPOSTHandler))
+
+	fmt.Println("Server started on port", e.Conf.Port)
 	http.ListenAndServe(fmt.Sprintf(":%d", e.Conf.Port), router)
 }
 
