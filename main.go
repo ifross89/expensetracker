@@ -45,7 +45,7 @@ func main() {
 
 	router.ServeFiles("/static/*filepath", http.Dir("static"))
 	router.GET("/admin/users", CreateHandlerWithEnv(e, handlers.CreateAdminUsersGETHandler))
-	router.POST("/admin/users", CreateHandlerWithEnv(e, handlers.CreateAdminUsersPOSTHandler))
+	router.POST("/admin/user", CreateHandlerWithEnv(e, handlers.CreateAdminUsersPOSTHandler))
 
 	fmt.Println("Server started on port", e.Conf.Port)
 	http.ListenAndServe(fmt.Sprintf(":%d", e.Conf.Port), router)

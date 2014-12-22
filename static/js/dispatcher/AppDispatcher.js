@@ -13,6 +13,13 @@ var AppDispatcher = assign(new Dispatcher(), {
       source: 'VIEW_ACTION',
       action: action
     });
+  },
+
+  handleRequestAction: function(action) {
+    this.dispatch({
+      source: 'REQUEST_ACTION',
+      action: action
+    });
   }
 
 });

@@ -4,29 +4,32 @@
 
 var request = require("superagent");
 var _ = require("underscore");
+var $ = require("jquery");
 
 var AppDispatcher = require("../dispatcher/AppDispatcher");
 
-var API_URL = '/admin/users'
+var API_URL = '/admin'
+var TIMEOUT = 10000;
 
-var = AdminUserClient {
+var  AdminUserClient = {
 	getAll: function() {
 		var promise = new Promise((resolve, reject) => {
 			request
-				.get(API_URL)
+				.get(API_URL + "/users")
+				.timeout(TIMEOUT)
 				.end((res) => {
 					if (res.ok) {
 						// Server responded successfully, check to see if there is an error
 						// in the JSON response.
 						if (res.body.status === "success") {
-							var users = res.body.data;
-							_.each(users, (user) => user.pending = false;)
+							var users = res.text.data;
+							_.each(users, (user) => user.pending = false);
 							resolve(res.body.data);
 						} else {
-							reject(res.body.message);
+							reject(res);
 						}
 					} else {
-						reject(res.body.message);
+						reject(res);
 					}
 				});
 		});
@@ -34,22 +37,47 @@ var = AdminUserClient {
 	},
 
 	save: function(user) {
-		user.pending = true;
+		if (user.id) {
+			// TODO PUT
+		}
+
 		var promise = new Promise((resolve, reject) => {
 			request
-				.post(API_URL)
+				.post(API_URL + "/user")
+				.timeout(TIMEOUT)
 				.send(user)
 				.end((res) => {
 					if (res.ok && res.body.status == "success") {
 						var user = res.body.data;
-						user.pending = false;
 						resolve(user);
 					} else {
-						reject(res.body);
+						res.user = user;
+						reject(res);
 					}
 				});
 		});
+		return promise
+	},
+
+	del: function(userId) {
+		var promise = new Promise((resolve, reject) => {
+			request
+				.del(API_URL + "/user/" + userId)
+				.timeout(TIMEOUT)
+				.end(res => {
+					if (res.ok && res.body.status === "success") {
+						resolve(userId);
+					} else {
+						reject(res, {userId: userId});
+					}
+				});
+		});
+		return promise;
 	}
+
+
 }
 
-module.exports = AdminUserClient;
+module.exports = {
+	AdminUserClient: AdminUserClient
+};

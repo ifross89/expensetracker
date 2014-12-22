@@ -19,6 +19,7 @@ type jsonResponse struct {
 }
 
 func jsonSuccess(w http.ResponseWriter, data interface{}) error {
+	w.Header().Set("Content-Type", "application/json")
 	return json.NewEncoder(w).Encode(jsonResponse{"success", data, "", 0})
 }
 
@@ -45,7 +46,6 @@ func (a adminUsersPOSTHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		Password string `json:"password"`
 	}{}
 	err := json.NewDecoder(r.Body).Decode(&u)
-	fmt.Println(u)
 
 	if err != nil && err != io.EOF {
 		fmt.Printf("Error: %v\n", err)
@@ -64,7 +64,10 @@ func (a adminUsersPOSTHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	adminUsersGETHandler{a.HandlerVars}.ServeHTTP(w, r)
+	err = jsonSuccess(w, user)
+	if err != nil {
+		fmt.Printf("Error encoding json: %v\n", err)
+	}
 }
 
 func CreateAdminUsersPOSTHandler(
