@@ -29,10 +29,14 @@ var AdminUserStore = _.extend({}, EventEmitter.prototype,{
 	}
 });
 
+function makeKey(userId) {
+	return "user-" + userId;
+}
+
 function createKey(user) {
 	var key = "";
 	if (user.id) {
-		key = "user-" + user.id;
+		key = makeKey(user.id);
 	} else {
 		j++;
 		key = "pending-user-" + j;
@@ -61,7 +65,25 @@ function saveExistingUser(user) {
 
 function deleteUser(userId) {
 	// Get the user from the store
-	
+	var key = makeKey(userId);
+	var user = users[key];
+	if (!user) {
+		console.error("Could not get user with id=" + userId);
+		return
+	}
+	pendingDelete[key] = user;
+	delete users[key];
+}
+
+function purgeUser(userId) {
+	delete pendingDelete[makeKey(userId)];
+}
+
+function restoreUser(userId) {
+	var key = makeKey(userId);
+	var user = pendingDelete[key];
+	delete pendingDelete[key];
+	users[key] = user;
 }
 
 AdminUserStore.appDispatch = AppDispatcher.register(function(payload) {
@@ -72,7 +94,6 @@ AdminUserStore.appDispatch = AppDispatcher.register(function(payload) {
 			persistUsers(action.response);
 			break;
 		case Constants.api.ADMIN_USER_SAVE:
-			console.log("in ADMIN_USER_SAVE", payload);
 			var user = action.response;
 			user.pending = true;
 			if (user.id) {
@@ -81,17 +102,28 @@ AdminUserStore.appDispatch = AppDispatcher.register(function(payload) {
 				saveNewUser(user);
 			}
 			break;
+
 		case Constants.api.ADMIN_USER_SAVE_SUCCESS:
-			console.log("in ADMIN_USER_SAVE_SUCCESS: ", payload);
 			var user = action.response;
 			user.pending = false;
 			saveExistingUser(user);
 			break;
+
+		case Constants.api.ADMIN_USER_DELETE:
+			deleteUser(action.response.userId);
+			break;
+
+		case Constants.api.ADMIN_USER_DELETE_SUCCESS:
+			purgeUser(action.response.userId);
+			break;
+
+		case Constants.api.ADMIN_USER_DELETE_FAIL:
+			restoreUser(action.response.userId);
+			break;
+
 		default:
-			console.log("in DEFAULT. payload=", payload);
 			return true;
 	}
-	console.log("AdminUserStore: emitting change");
 	AdminUserStore.emitChange();
 	return true;
 });

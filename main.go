@@ -46,6 +46,7 @@ func main() {
 	router.ServeFiles("/static/*filepath", http.Dir("static"))
 	router.GET("/admin/users", CreateHandlerWithEnv(e, handlers.CreateAdminUsersGETHandler))
 	router.POST("/admin/user", CreateHandlerWithEnv(e, handlers.CreateAdminUsersPOSTHandler))
+	router.DELETE("/admin/user/:user_id", CreateHandlerWithEnv(e, handlers.CreateAdminUserDELETEHandler))
 
 	fmt.Println("Server started on port", e.Conf.Port)
 	http.ListenAndServe(fmt.Sprintf(":%d", e.Conf.Port), router)

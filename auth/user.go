@@ -252,6 +252,14 @@ func (m UserManager) UserResetPw(u *User, old, pw, confirm string) error {
 	return m.UpdatePw(u, pw, confirm)
 }
 
+func (m UserManager) DeleteUser(u *User) error {
+	return m.store.Delete(u)
+}
+
+func (m UserManager) DeleteUserById(id int64) error {
+	return m.store.Delete(&User{ID: id})
+}
+
 // Helper function that generates random tokens. The length of the token
 // created is currenly static (512 bit). The random sequence is base-64
 // encoded into a string.

@@ -12,6 +12,11 @@ var AdminUserBox = React.createClass({
 		AdminUserActions.saveUser(user);
 	},
 
+	handleUserDelete: function(userId) {
+		console.log("Deleting user with id = " + userId);
+		AdminUserActions.deleteUser(userId);
+	},
+
 	getInitialState: function() {
 		return {data: AdminUserStore.getUsers()};
 	},
@@ -32,7 +37,7 @@ var AdminUserBox = React.createClass({
 		return(
 			<div className="adminUserBox">
 				<h2> Users </h2>
-				<UserList data={this.state.data} />
+				<UserList data={this.state.data} handleDelete={this.handleUserDelete}/>
 				<NewUserAdminForm onUserSubmit={this.handleUserSubmit} />
 			</div>
 		)
@@ -48,10 +53,15 @@ function asArr(obj) {
 }
 
 var UserList = React.createClass({
+	handleDelete: function(userId) {
+		this.props.handleDelete(userId);
+	},
 	render: function() {
+			var handleDelete = this.props.handleDelete;
 			var userNodes = asArr(this.props.data).map(function(user){
+				var userId = user.id ? user.id : -1;
 				return (
-					<User name={user.name} email={user.email} key={user.key} />
+					<User name={user.name} email={user.email} key={user.key} userId={userId} handleDelete={handleDelete}/>
 				);
 			});
 
@@ -67,10 +77,15 @@ var UserList = React.createClass({
 });
 
 var User = React.createClass({
+	handleDelete: function(e) {
+		e.preventDefault();
+		this.props.handleDelete(this.props.userId);
+	},
 	render: function() {
 		var email = 'mailto:' + this.props.email;
+		var deleteDisabled = this.props.userId == -1;
 		return (
-			<li className="user" ><a href={email}>{this.props.name}</a></li>
+			<li className="user" ><a href={email}>{this.props.name}</a> <button disabled={deleteDisabled} onClick={this.handleDelete}>Delete</button></li>
 		);
 	}
 });

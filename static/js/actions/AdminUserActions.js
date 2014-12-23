@@ -30,12 +30,12 @@ function userSaveFail(response) {
 	dispatch(Constants.api.ADMIN_USER_SAVE_FAIL, response);
 }
 
-function userDeleteSuccess(response) {
-	dispatch(Constants.api.ADMIN_USER_DELETE_SUCCESS);
+function userDeleteSuccess(response, params) {
+	dispatch(Constants.api.ADMIN_USER_DELETE_SUCCESS, response);
 }
 
 function userDeleteFail(response, params) {
-	dispatch(Constants.api.ADMIN_USER_DELETE_FAIL);
+	dispatch(Constants.api.ADMIN_USER_DELETE_FAIL, response, params);
 }
 
 var AdminUserActions = {
@@ -54,8 +54,10 @@ var AdminUserActions = {
 	},
 
 	deleteUser: function(userId) {
-		dispatch(Constants.api.ADMIN_USER_DELETE, userId);
-		AdminUserClient.del(
+		console.log("deleteUser");
+		console.log(userId);
+		dispatch(Constants.api.ADMIN_USER_DELETE, {userId: userId});
+		AdminUserClient.del(userId).then(
 			userDeleteSuccess,
 			userDeleteFail);
 	}

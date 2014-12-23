@@ -38,7 +38,22 @@ var  AdminUserClient = {
 
 	save: function(user) {
 		if (user.id) {
-			// TODO PUT
+			promise = new Promise((resolve, reject) => {
+				request.
+					put(API_URL + "user/" + user.id)
+					.timeout(TIMEOUT)
+					.send(user)
+					.end((res) => {
+						if (res.ok && res.body.status === "success" {
+							var user = res.body.data;
+							resolve(user);
+						} else {
+							res.user = user;
+							reject(res);
+						})
+					})
+			});
+			return promise;
 		}
 
 		var promise = new Promise((resolve, reject) => {
@@ -66,7 +81,7 @@ var  AdminUserClient = {
 				.timeout(TIMEOUT)
 				.end(res => {
 					if (res.ok && res.body.status === "success") {
-						resolve(userId);
+						resolve({userId: userId});
 					} else {
 						reject(res, {userId: userId});
 					}

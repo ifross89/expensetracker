@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 )
 
 type jsonResponse struct {
@@ -20,7 +21,13 @@ type jsonResponse struct {
 
 func jsonSuccess(w http.ResponseWriter, data interface{}) error {
 	w.Header().Set("Content-Type", "application/json")
-	return json.NewEncoder(w).Encode(jsonResponse{"success", data, "", 0})
+	return json.NewEncoder(w).Encode(jsonResponse{"success", data, "", http.StatusOK})
+}
+
+func jsonError(w http.ResponseWriter, code int, message string) error {
+	w.WriteHeader(code)
+	w.Header().Set("Content-Type", "application/json")
+	return json.NewEncoder(w).Encode(jsonResponse{"error", nil, message, code})
 }
 
 type HandlerVars struct {
@@ -102,5 +109,36 @@ func (a adminUsersGETHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	err = jsonSuccess(w, users)
 	if err != nil {
 		fmt.Printf("Error encoding json: %v\n", err)
+	}
+}
+
+type adminUserDELETEHandler struct {
+	*HandlerVars
+}
+
+func CreateAdminUserDELETEHandler(
+	e *env.Env,
+	w http.ResponseWriter,
+	r *http.Request,
+	ps httprouter.Params) (http.Handler, int, error) {
+	return adminUserDELETEHandler{createHandlerVars(e, ps)}, http.StatusOK, nil
+}
+
+func (h adminUserDELETEHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	uidStr := h.ps.ByName("user_id")
+	uid, err := strconv.Atoi(uidStr)
+	if err != nil {
+		jsonError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	err = h.env.DeleteUserById(int64(uid))
+	if err != nil {
+		jsonError(w, http.StatusInternalServerError, err.Error())
+	}
+
+	err = jsonSuccess(w, nil)
+	if err != nil {
+		fmt.Printf("Error sending success: %v", err)
 	}
 }
