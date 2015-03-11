@@ -8,7 +8,7 @@ var $ = require("jquery");
 
 var AppDispatcher = require("../dispatcher/AppDispatcher");
 
-var API_URL = '/admin'
+var API_URL = '/admin';
 var TIMEOUT = 10000;
 
 var  AdminUserClient = {
@@ -44,13 +44,13 @@ var  AdminUserClient = {
 					.timeout(TIMEOUT)
 					.send(user)
 					.end((res) => {
-						if (res.ok && res.body.status === "success" {
+						if (res.ok && res.body.status === "success") {
 							var user = res.body.data;
 							resolve(user);
 						} else {
 							res.user = user;
 							reject(res);
-						})
+						}
 					})
 			});
 			return promise;
