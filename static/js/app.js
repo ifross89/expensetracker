@@ -113,11 +113,14 @@ var NewUserAdminForm = React.createClass({
 			password: password,
 		});
 
+    console.log("Active currently:", this.refs.active.getDOMNode().value);
+    console.log(this.refs.active.getDOMNode());
 		this.refs.name.getDOMNode().value = '';
 		this.refs.email.getDOMNode().value = '';
 		this.refs.admin.getDOMNode().value = 'off';
 		this.refs.active.getDOMNode().value = 'off';
 		this.refs.password.getDOMNode().value = '';
+    console.log("Active now:", this.refs.active.getDOMNode().value);
 		return;
 	},
 	render: function() {

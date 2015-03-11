@@ -18,7 +18,7 @@ import (
 )
 
 func main() {
-	db := sqlx.MustOpen("postgres", "user=ian dbname=expensetrackerv2 password=wedge89")
+	db := sqlx.MustOpen("postgres", "user=ian dbname=expensetrackerv2 password=wedge89 sslmode=disable")
 	store := postgrestore.MustCreate(db)
 	sessionStore := auth.NewCookieSessionStore(
 		[]byte("new-authentication-key"),
@@ -26,6 +26,8 @@ func main() {
 
 	um := auth.NewUserManager(nil, store, nil, sessionStore)
 	m := models.NewManager(store)
+	//store.MustCreateTypes()
+	//store.MustCreateTables()
 	store.MustPrepareStmts()
 
 	e := &env.Env{
