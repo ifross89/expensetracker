@@ -1,11 +1,11 @@
 package main
 
 import (
-	"git.ianfross.com/expensetracker/auth"
-	"git.ianfross.com/expensetracker/env"
-	"git.ianfross.com/expensetracker/handlers"
-	"git.ianfross.com/expensetracker/models"
-	"git.ianfross.com/expensetracker/models/postgrestore"
+	"git.ianfross.com/ifross/expensetracker/auth"
+	"git.ianfross.com/ifross/expensetracker/env"
+	"git.ianfross.com/ifross/expensetracker/handlers"
+	"git.ianfross.com/ifross/expensetracker/models"
+	"git.ianfross.com/ifross/expensetracker/models/postgrestore"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/julienschmidt/httprouter"

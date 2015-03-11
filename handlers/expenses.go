@@ -1,9 +1,9 @@
 package handlers
 
 import (
-	"git.ianfross.com/expensetracker/auth"
-	"git.ianfross.com/expensetracker/models"
-	"git.ianfross.com/expensetracker/routeindex"
+	"git.ianfross.com/ifross/expensetracker/auth"
+	"git.ianfross.com/ifross/expensetracker/models"
+	"git.ianfross.com/ifross/expensetracker/routeindex"
 )
 
 type ExpenseGetHandler struct {

@@ -1,7 +1,7 @@
 package postgrestore
 
 import (
-	"git.ianfross.com/expensetracker/auth"
+	"git.ianfross.com/ifross/expensetracker/auth"
 
 	"github.com/juju/errors"
 
