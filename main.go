@@ -15,18 +15,60 @@ import (
 	"net/http"
 	"os"
 	"flag"
+	"strings"
 	"time"
 )
+
+type actionsMap map[string]func() error
+
+func (a actionsMap) available() string {
+	var actions []string
+	for k, _ := range a{
+		actions = append(actions, k)
+	}
+	return "[" + strings.Join(actions, ", ") + "]"
+}
+
+func (a actionsMap) validAction(action string) bool {
+	_, ok := a[action]
+	return ok
+}
+
+func (a actionsMap) perform(action string) {
+	err := a[action]()
+	if err != nil {
+		panic(err)
+	}
+}
+
 
 var (
 	dbUser = flag.String("db-user", "expensetracker", "database user to connect with")
 	dbName = flag.String("db-name", "expensetracker", "name of the database to connect to")
 	dbPw = flag.String("db-pw", "", "user's database password")
 	port = flag.Int("port", 8181, "HTTP port to listen on")
-
+	action = flag.String("action", "start", "action to perform. Available: " + actions.available())
 )
 
+var actions = actionsMap{
+	"start": start,
+}
+
+var start = func() error {
+	fmt.Println("dbUser:", *dbUser, "dbName:", *dbName, "dbPw:", *dbPw, "port:", *port)
+	return nil
+}
+
 func main() {
+	flag.Parse()
+	if !actions.validAction(*action) {
+		fmt.Println("Please choose a valid action. Available: " + actions.available())
+		os.Exit(1)
+	}
+
+	actions.perform(*action)
+
+	panic("end")
 	db := sqlx.MustOpen("postgres", "user=ian dbname=expensetrackerv2 password=wedge89 sslmode=disable")
 	store := postgrestore.MustCreate(db)
 	sessionStore := auth.NewCookieSessionStore(
