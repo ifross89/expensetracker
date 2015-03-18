@@ -43,21 +43,41 @@ func (a actionsMap) perform(action string) {
 
 
 var (
-	dbUser = flag.String("db-user", "expensetracker", "database user to connect with")
-	dbName = flag.String("db-name", "expensetracker", "name of the database to connect to")
-	dbPw = flag.String("db-pw", "", "user's database password")
+	dbUser = flag.String("db_user", "expensetracker", "database user to connect with")
+	dbName = flag.String("db_name", "expensetracker", "name of the database to connect to")
+	dbPw = flag.String("db_pw", "", "user's database password")
 	port = flag.Int("port", 8181, "HTTP port to listen on")
 	action = flag.String("action", "start", "action to perform. Available: " + actions.available())
 )
 
-var actions = actionsMap{
-	"start": start,
-}
-
-var start = func() error {
+func start() error {
 	fmt.Println("dbUser:", *dbUser, "dbName:", *dbName, "dbPw:", *dbPw, "port:", *port)
 	return nil
 }
+
+func createSchema() error {
+	fmt.Println("Creating schema")
+	return nil
+}
+
+func dropSchema() error {
+	fmt.Println("Drop schema")
+	return nil
+}
+
+func addAdmin() error {
+	fmt.Println("Adding admin")
+	return nil
+}
+
+var actions = actionsMap{
+	"start": start,
+	"create_schema": createSchema,
+	"drop_schema": dropSchema,
+	"add_admin": addAdmin,
+}
+
+
 
 func main() {
 	flag.Parse()
