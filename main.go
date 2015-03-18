@@ -14,7 +14,16 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"flag"
 	"time"
+)
+
+var (
+	dbUser = flag.String("db-user", "expensetracker", "database user to connect with")
+	dbName = flag.String("db-name", "expensetracker", "name of the database to connect to")
+	dbPw = flag.String("db-pw", "", "user's database password")
+	port = flag.Int("port", 8181, "HTTP port to listen on")
+
 )
 
 func main() {
