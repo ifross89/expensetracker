@@ -50,7 +50,7 @@ var (
 )
 
 func DBConn() *sqlx.DB {
-	return sqlx.MustOpen("postgres", fmt.Sprintf("user=%s dbname=%s password=%s sslmode=disable", dbUser, dbName, dbPw))
+	return sqlx.MustOpen("postgres", fmt.Sprintf("user=%s dbname=%s password=%s sslmode=disable", *dbUser, *dbName, *dbPw))
 }
 
 func start() error {
