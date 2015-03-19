@@ -93,7 +93,7 @@ func start() error {
 
 func createSchema() error {
 	db := DBConn()
-	store := postgresstore.MustCreate(db)
+	store := postgrestore.MustCreate(db)
 
 	store.MustCreateTypes()
 	store.MustCreateTables()
@@ -102,7 +102,7 @@ func createSchema() error {
 
 func dropSchema() error {
 	db := DBConn()
-	store := postgresstore.MustCreate(db)
+	store := postgrestore.MustCreate(db)
 
 	store.MustDropTables()
 	store.MustDropTypes()

@@ -24,3 +24,6 @@ _testmain.go
 .idea
 node_modules
 bundle.js
+
+# expensetracker binary
+expensetracker
