@@ -45,17 +45,23 @@ var (
 	dbUser = flag.String("db_user", "expensetracker", "database user to connect with")
 	dbName = flag.String("db_name", "expensetracker", "name of the database to connect to")
 	dbPw   = flag.String("db_pw", "", "user's database password")
+	dbHost = flag.String("db_host", "localhost", "host the database is running on")
+	dbPort = flag.Int("db_port", 5432, "port the database is listening on")
 	port   = flag.Int("port", 8181, "HTTP port to listen on")
 	action = flag.String("action", "start", "action to perform. Available: "+actions.available())
 )
 
 func DBConn() *sqlx.DB {
-	return sqlx.MustOpen("postgres", fmt.Sprintf("user=%s dbname=%s password=%s sslmode=disable", *dbUser, *dbName, *dbPw))
+	return sqlx.MustOpen("postgres",
+		fmt.Sprintf("user=%s dbname=%s password=%s host=%s port=%d sslmode=disable",
+			*dbUser, *dbName, *dbPw, *dbHost, *dbPort))
 }
 
 func start() error {
 	db := DBConn()
+
 	store := postgrestore.MustCreate(db)
+	store.MustPrepareStmts()
 	sessionStore := auth.NewCookieSessionStore(
 		[]byte("new-authentication-key"),
 		[]byte("new-encryption-key"))
