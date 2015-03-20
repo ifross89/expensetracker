@@ -47,8 +47,13 @@ var (
 	dbPw   = flag.String("db_pw", "", "user's database password")
 	dbHost = flag.String("db_host", "localhost", "host the database is running on")
 	dbPort = flag.Int("db_port", 5432, "port the database is listening on")
+
 	port   = flag.Int("port", 8181, "HTTP port to listen on")
 	action = flag.String("action", "start", "action to perform. Available: "+actions.available())
+
+	adminName  = flag.String("admin_name", "", "Name of admin to add")
+	adminEmail = flag.String("admin_email", "", "Email of admin to add")
+	adminPw    = flag.String("admin_pw", "", "Password of admin to add")
 )
 
 func DBConn() *sqlx.DB {
@@ -116,7 +121,25 @@ func dropSchema() error {
 }
 
 func addAdmin() error {
-	fmt.Println("Adding admin")
+	// TODO: Parameter checking
+	db := DBConn()
+	store := postgrestore.MustCreate(db)
+	store.MustPrepareStmts()
+	sessionStore := auth.NewCookieSessionStore(
+		[]byte("new-authentication-key"),
+		[]byte("new-encryption-key"))
+
+	um := auth.NewUserManager(nil, store, nil, sessionStore)
+
+	user, err := um.New(*adminName, *adminEmail, *adminPw, *adminPw, true, true)
+	if err != nil {
+		return err
+	}
+
+	err = um.Insert(user)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
