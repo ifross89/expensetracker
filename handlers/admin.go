@@ -30,8 +30,8 @@ func jsonError(w http.ResponseWriter, code int, message string) error {
 	return json.NewEncoder(w).Encode(jsonResponse{"error", nil, message, code})
 }
 
-func statusCodeAndText(code int) (int, string) {
-	return code, http.StatusText(code)
+func jsonErrorWithCodeText(w http.ResponseWriter, code int) error {
+	return jsonError(w, code, http.StatusText(code))
 }
 
 type HandlerVars struct {
@@ -60,7 +60,7 @@ func (a adminUsersPOSTHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 
 	if err != nil && err != io.EOF {
 		fmt.Printf("Error: %v\n", err)
-		jsonError(w, statusCodeAndText(http.StatusInternalServerError))
+		jsonErrorWithCodeText(w, http.StatusInternalServerError)
 		return
 	}
 
@@ -74,7 +74,7 @@ func (a adminUsersPOSTHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	err = a.env.Insert(user)
 	if err != nil {
 		fmt.Println(err)
-		jsonError(w, statusCodeAndText(http.StatusInternalServerError))
+		jsonErrorWithCodeText(w, http.StatusInternalServerError)
 		return
 	}
 
