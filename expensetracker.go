@@ -34,11 +34,8 @@ func (a actionsMap) validAction(action string) bool {
 	return ok
 }
 
-func (a actionsMap) perform(action string) {
-	err := a[action]()
-	if err != nil {
-		panic(err)
-	}
+func (a actionsMap) perform(action string) error {
+	return a[action]()
 }
 
 var (
@@ -56,14 +53,17 @@ var (
 	adminPw    = flag.String("admin_pw", "", "Password of admin to add")
 )
 
-func DBConn() *sqlx.DB {
-	return sqlx.MustOpen("postgres",
+func DBConn() (*sqlx.DB, error) {
+	return sqlx.Open("postgres",
 		fmt.Sprintf("user=%s dbname=%s password=%s host=%s port=%d sslmode=disable",
 			*dbUser, *dbName, *dbPw, *dbHost, *dbPort))
 }
 
 func start() error {
-	db := DBConn()
+	db, err := DBConn()
+	if err != nil {
+		return err
+	}
 
 	store := postgrestore.MustCreate(db)
 	store.MustPrepareStmts()
@@ -103,7 +103,10 @@ func start() error {
 }
 
 func createSchema() error {
-	db := DBConn()
+	db, err := DBConn()
+	if err != nil {
+		return err
+	}
 	store := postgrestore.MustCreate(db)
 
 	store.MustCreateTypes()
@@ -112,7 +115,11 @@ func createSchema() error {
 }
 
 func dropSchema() error {
-	db := DBConn()
+	db, err := DBConn()
+	if err != nil {
+		return err
+	}
+
 	store := postgrestore.MustCreate(db)
 
 	store.MustDropTables()
@@ -122,7 +129,10 @@ func dropSchema() error {
 
 func addAdmin() error {
 	// TODO: Parameter checking
-	db := DBConn()
+	db, err := DBConn()
+	if err != nil {
+		return err
+	}
 	store := postgrestore.MustCreate(db)
 	store.MustPrepareStmts()
 	sessionStore := auth.NewCookieSessionStore(
@@ -157,7 +167,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	actions.perform(*action)
+	err := actions.perform(*action)
+	if err != nil {
+		fmt.Printf("Error performing %s: %v", *action, err)
+	}
 }
 
 type InitHandler func(*env.Env, http.ResponseWriter, *http.Request, httprouter.Params) (http.Handler, int, error)
