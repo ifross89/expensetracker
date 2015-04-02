@@ -169,6 +169,10 @@ func (m UserManager) LogOut(w http.ResponseWriter, r *http.Request) error {
 	return m.sess.LogUserOut(w, r)
 }
 
+func (m UserManager) LogIn(w http.ResponseWriter, r *http.Request, u *User) error {
+	return m.sess.LogUserIn(w, r, u)
+}
+
 // Activate ensures that a user is able to log on.
 func (m UserManager) Activate(u *User) error {
 	if u.Active {

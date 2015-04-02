@@ -16,7 +16,7 @@ type jsonResponse struct {
 	Status  string      `json:"status"`
 	Data    interface{} `json:"data,omitempty"`
 	Message string      `json:"message,omitempty"`
-	Code    int         `json:"message,omitempty"`
+	Code    int         `json:"code,omitempty"`
 }
 
 func jsonSuccess(w http.ResponseWriter, data interface{}) error {

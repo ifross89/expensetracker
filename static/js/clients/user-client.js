@@ -6,7 +6,7 @@ var request = require("superagent");
 var _ = require("underscore");
 var $ = require("jquery");
 
-var AppDispatcher = require("../dispatcher/AppDispatcher");
+var AppDispatcher = require("../dispatcher/app-dispatcher");
 
 var API_URL = '/admin';
 var TIMEOUT = 10000;
@@ -29,7 +29,8 @@ var  AdminUserClient = {
 							reject(res);
 						}
 					} else {
-						reject(res);
+						var resBody = JSON.parse(res.text);
+						reject(resBody);
 					}
 				});
 		});
@@ -48,8 +49,9 @@ var  AdminUserClient = {
 							var user = res.body.data;
 							resolve(user);
 						} else {
-							res.user = user;
-							reject(res);
+							var resBody = JSON.parse(res.text);
+							resBody.user = user;
+							reject(resBody);
 						}
 					})
 			});
@@ -66,8 +68,9 @@ var  AdminUserClient = {
 						var user = res.body.data;
 						resolve(user);
 					} else {
-						res.user = user;
-						reject(res);
+						var resBody = JSON.parse(res.text);
+						resBody.user = user;
+						reject(resBody);
 					}
 				});
 		});
@@ -83,7 +86,8 @@ var  AdminUserClient = {
 					if (res.ok && res.body.status === "success") {
 						resolve({userId: userId});
 					} else {
-						reject(res, {userId: userId});
+						var resBody = JSON.parse(res.text);
+						reject(resBody, {userId: userId});
 					}
 				});
 		});
@@ -91,7 +95,7 @@ var  AdminUserClient = {
 	}
 
 
-}
+};
 
 module.exports = {
 	AdminUserClient: AdminUserClient

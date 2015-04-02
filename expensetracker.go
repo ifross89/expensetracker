@@ -68,8 +68,8 @@ func start() error {
 	store := postgrestore.MustCreate(db)
 	store.MustPrepareStmts()
 	sessionStore := auth.NewCookieSessionStore(
-		[]byte("new-authentication-key"),
-		[]byte("new-encryption-key"))
+		[]byte("newauthenticatio"),
+		[]byte("newencryptionkey"))
 
 	um := auth.NewUserManager(nil, store, nil, sessionStore)
 	m := models.NewManager(store)
@@ -97,6 +97,9 @@ func start() error {
 	router.GET("/admin/users", CreateHandlerWithEnv(e, handlers.CreateAdminUsersGETHandler))
 	router.POST("/admin/user", CreateHandlerWithEnv(e, handlers.CreateAdminUsersPOSTHandler))
 	router.DELETE("/admin/user/:user_id", CreateHandlerWithEnv(e, handlers.CreateAdminUserDELETEHandler))
+
+	router.POST("/auth/login", CreateHandlerWithEnv(e, handlers.CreateLoginHandler))
+	router.GET("/auth/logout", CreateHandlerWithEnv(e, handlers.CreateLogoutHandler))
 
 	fmt.Println("Server started on port", e.Conf.Port)
 	return http.ListenAndServe(fmt.Sprintf(":%d", e.Conf.Port), router)

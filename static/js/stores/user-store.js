@@ -1,4 +1,4 @@
-var AppDispatcher = require('../dispatcher/AppDispatcher');
+var AppDispatcher = require('../dispatcher/app-dispatcher');
 var EventEmitter = require('events').EventEmitter;
 var Constants = require('../constants/ExpenseTracjerConstants');
 var assign = require('object-assign');
@@ -28,11 +28,11 @@ function update(key, updates) {
 		delete _users[key]; // fails silently if doesn't exist
 		key = "user-" + id;
 	}
-	_users[key] = assign({}, old, updates)''
+	_users[key] = assign({}, old, updates);
 }
 
 function updateAll(updates) {
-	var (var key in _users) {
+	for (var key in _users) {
 		update(key, updates);
 	}
 }
@@ -78,7 +78,7 @@ AppDispatcher.register(function(payload) {
 				update(action.key, action.user);
 			}
 			break;
-		case Constants.USER_UPDATE 
+		case Constants.USER_UPDATE:
 			update(action.key, action.user);
 			break;
 		default:

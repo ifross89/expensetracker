@@ -1,5 +1,5 @@
-var AppDispatcher = require("../dispatcher/AppDispatcher");
-var Constants = require("../constants/ExpenseTrackerConstants");
+var AppDispatcher = require("../dispatcher/app-dispatcher");
+var Constants = require("../constants/expense-tracker-constants");
 var _ = require('underscore');
 var EventEmitter = require('events').EventEmitter;
 

@@ -3,8 +3,50 @@
 var React = require("react");
 var _ = require("underscore");
 
-var AdminUserStore = require("./stores/AdminUserStore");
-var AdminUserActions = require("./actions/AdminUserActions");
+var AdminUserStore = require("./stores/admin-user-store");
+var AdminUserActions = require("./actions/admin-user-actions");
+
+var SigninForm = React.createClass({
+	handleSubmit: function(e) {
+		e.preventDefault();
+
+		var email = this.refs.email.getDOMNode().value.trim();
+		var password = this.refs.password.getDOMNode().value.trim();
+
+		console.log('handle login submit', email, password);
+		AdminUserActions.login(email, password);
+	},
+
+	render: function() {
+		return (
+			<div>
+				<form onSubmit={this.handleSubmit}>
+					<input type="email" name="email" ref="email" />
+					<input type="password" name="password" ref="password" />
+					<input type="submit" value="Log In" /><br />
+				</form>
+			</div>
+		)
+	}
+});
+
+var LogoutButton = React.createClass({
+	handleSubmit: function(e) {
+		e.preventDefault();
+
+		AdminUserActions.logout();
+	},
+
+	render: function() {
+		return (
+			<div>
+				<form onSubmit={this.handleSubmit}>
+					<input type="submit" value="Log Out" />
+				</form>
+			</div>
+		)
+	}
+});
 
 var AdminUserBox = React.createClass({
 	handleUserSubmit: function(user) {
@@ -36,6 +78,8 @@ var AdminUserBox = React.createClass({
 	render: function() {
 		return(
 			<div className="adminUserBox">
+				<SigninForm />
+				<LogoutButton />
 				<h2> Users </h2>
 				<UserList data={this.state.data} handleDelete={this.handleUserDelete}/>
 				<NewUserAdminForm onUserSubmit={this.handleUserSubmit} />
@@ -48,7 +92,7 @@ function asArr(obj) {
 	var arr = [];
 	_.each(obj, function(prop) {
 		arr = arr.concat(prop);
-	})
+	});
 	return arr
 }
 
@@ -110,7 +154,7 @@ var NewUserAdminForm = React.createClass({
 			email: email,
 			admin: admin,
 			active: active,
-			password: password,
+			password: password
 		});
 
     console.log("Active currently:", this.refs.active.getDOMNode().value);
@@ -121,7 +165,6 @@ var NewUserAdminForm = React.createClass({
 		this.refs.active.getDOMNode().value = 'off';
 		this.refs.password.getDOMNode().value = '';
     console.log("Active now:", this.refs.active.getDOMNode().value);
-		return;
 	},
 	render: function() {
 		return (

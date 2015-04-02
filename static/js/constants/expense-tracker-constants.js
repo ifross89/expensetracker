@@ -17,7 +17,15 @@ module.exports = {
 
 		ADMIN_USER_DELETE: null,
 		ADMIN_USER_DELETE_SUCCESS: null,
-		ADMIN_USER_DELETE_FAIL: null
+		ADMIN_USER_DELETE_FAIL: null,
+
+		LOGIN: null,
+		LOGIN_SUCCESS: null,
+		LOGIN_FAIL:null,
+
+		LOGOUT: null,
+		LOGOUT_SUCCESS: null,
+		LOGOUT_FAIL: null
 	}),
 
 	request: keyMirror({
