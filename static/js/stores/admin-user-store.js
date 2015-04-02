@@ -86,6 +86,12 @@ function restoreUser(userId) {
 	users[key] = user;
 }
 
+function deletePending(email) {
+	console.log('pendingBefore: ', pendingUsers);
+	delete pendingUsers[email];
+	console.log('pendingAfter: ', pendingUsers);
+}
+
 AdminUserStore.appDispatch = AppDispatcher.register(function(payload) {
 	var action = payload.action;
 	console.log("ACTION: ", payload.action);
@@ -101,6 +107,10 @@ AdminUserStore.appDispatch = AppDispatcher.register(function(payload) {
 			} else {
 				saveNewUser(user);
 			}
+			break;
+
+		case Constants.api.ADMIN_USER_SAVE_FAIL:
+			deletePending(action.response.user.email);
 			break;
 
 		case Constants.api.ADMIN_USER_SAVE_SUCCESS:

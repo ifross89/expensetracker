@@ -57,8 +57,8 @@ var  AdminUserClient = {
 			});
 			return promise;
 		}
-
 		var promise = new Promise((resolve, reject) => {
+			var pendingUser = _.clone(user);
 			request
 				.post(API_URL + "/user")
 				.timeout(TIMEOUT)
@@ -69,7 +69,7 @@ var  AdminUserClient = {
 						resolve(user);
 					} else {
 						var resBody = JSON.parse(res.text);
-						resBody.user = user;
+						resBody.user = pendingUser;
 						reject(resBody);
 					}
 				});

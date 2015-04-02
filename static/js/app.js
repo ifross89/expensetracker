@@ -135,20 +135,39 @@ var User = React.createClass({
 });
 
 var NewUserAdminForm = React.createClass({
+	getInitialState: function() {
+		return {
+			active: false,
+			admin: false
+		}
+	},
+	handleActiveChanged: function(e) {
+		var state = this.state;
+		state.active = !state.active;
+
+		this.setState(state);
+	},
+	handleAdminChanged: function() {
+		var state = this.state;
+		state.admin = !state.admin
+
+		this.setState(state);
+	},
 	handleSubmit: function(e) {
 		e.preventDefault();
 		var name = this.refs.name.getDOMNode().value.trim();
 		var email = this.refs.email.getDOMNode().value.trim();
-		var admin = this.refs.admin.getDOMNode().value.trim() === "on";
-		var active = this.refs.active.getDOMNode().value.trim() === "on";
+		var admin = this.state.admin;
+		var active = this.state.active;
 		var password = this.refs.password.getDOMNode().value.trim();
+
+
 
 		if (!name || !email) {
 			return;
 		}
 
 
-		console.log("handleSubmit: " + email);
 		this.props.onUserSubmit({
 			name: name,
 			email: email,
@@ -157,14 +176,10 @@ var NewUserAdminForm = React.createClass({
 			password: password
 		});
 
-    console.log("Active currently:", this.refs.active.getDOMNode().value);
-    console.log(this.refs.active.getDOMNode());
 		this.refs.name.getDOMNode().value = '';
 		this.refs.email.getDOMNode().value = '';
-		this.refs.admin.getDOMNode().value = 'off';
-		this.refs.active.getDOMNode().value = 'off';
 		this.refs.password.getDOMNode().value = '';
-    console.log("Active now:", this.refs.active.getDOMNode().value);
+		this.setState({active:false, admin:false});
 	},
 	render: function() {
 		return (
@@ -172,8 +187,8 @@ var NewUserAdminForm = React.createClass({
 				<input type="text" placeholder="Your name" name="name" ref="name"/><br />
 				<input type="email" placeholder="hello@example.com" name="email" ref="email" /><br />
 				<input type="password" name="password" ref="password" /> <br />
-				<input type="checkbox" name="admin" ref="admin"/> Admin? <br />
-				<input type="checkbox" name="active" ref="active" /> Active? <br />
+				<input type="checkbox" name="admin" ref="admin" onChange={this.handleAdminChanged} checked={this.state.admin}/> Admin? <br />
+				<input type="checkbox" name="active" ref="active" onChange={this.handleActiveChanged} checked={this.state.active} /> Active? <br />
 				<input type="submit" value="Save" /><br />
 			</form>
 		);
