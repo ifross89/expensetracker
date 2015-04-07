@@ -39,24 +39,6 @@ function userDeleteFail(response, params) {
 	dispatch(Constants.api.ADMIN_USER_DELETE_FAIL, response, params);
 }
 
-function loginSuccess(user) {
-	dispatch(Constants.api.LOGIN_SUCCESS, user);
-}
-
-function loginFail(message) {
-	dispatch(Constants.api.LOGIN_FAIL, message);
-}
-
-function logoutSuccess() {
-	dispatch(Constants.api.LOGOUT_SUCCESS);
-	console.log('logout success');
-}
-
-function logoutFail(message) {
-	dispatch(Constants.api.LOGOUT_FAIL, message);
-	console.log('logout fail');
-}
-
 var AdminUserActions = {
 	getUsers: function() {
 		dispatch(Constants.api.ADMIN_USERS_LOAD);
@@ -79,20 +61,6 @@ var AdminUserActions = {
 		AdminUserClient.del(userId).then(
 			userDeleteSuccess,
 			userDeleteFail);
-	},
-
-	login: function(email, password) {
-		console.log('login');
-		dispatch(Constants.api.LOGIN);
-		AuthClient.login(email, password)
-			.then(loginSuccess, loginFail);
-	},
-
-	logout: function() {
-		console.log('logout');
-		dispatch(Constants.api.LOGOUT);
-		AuthClient.logout()
-			.then(logoutSuccess, logoutFail);
 	}
 };
 

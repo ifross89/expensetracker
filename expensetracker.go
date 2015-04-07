@@ -100,6 +100,7 @@ func start() error {
 
 	router.POST("/auth/login", CreateHandlerWithEnv(e, handlers.CreateLoginHandler))
 	router.GET("/auth/logout", CreateHandlerWithEnv(e, handlers.CreateLogoutHandler))
+	router.POST("/auth/change_password", CreateHandlerWithEnv(e, handlers.CreateChangePasswordHandler))
 
 	fmt.Println("Server started on port", e.Conf.Port)
 	return http.ListenAndServe(fmt.Sprintf(":%d", e.Conf.Port), router)

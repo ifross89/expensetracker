@@ -91,3 +91,50 @@ func (h logoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	jsonSuccess(w, nil)
 }
+
+type changePasswordInfo struct {
+	OldPassword string `json:"oldPassword"`
+	NewPassword string `json:"newPassword"`
+	ConfirmPassword string `json:"confirmPassword"`
+}
+
+type changePasswordHandler struct {
+	*HandlerVars
+}
+
+func CreateChangePasswordHandler(
+	e *env.Env,
+	w http.ResponseWriter,
+	r *http.Request,
+	ps httprouter.Params) (http.Handler, int, error) {
+	return logoutHandler{createHandlerVars(e, ps)}, http.StatusOK, nil
+}
+
+func (h changePasswordHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	u, err := h.env.UserManager.FromSession(w, r)
+	if err != nil {
+		jsonErrorWithCodeText(w, http.StatusUnauthorized)
+		return
+	}
+	info := changePasswordInfo{}
+	err = json.NewDecoder(r.Body).Decode(&info)
+	if err != nil {
+		fmt.Println(err)
+		jsonError(w, http.StatusBadRequest, "Old password, new password and password confirmation must be supplied")
+		return
+	}
+
+	err = h.env.UserManager.Authenticate(u, info.OldPassword)
+	if err != nil {
+		jsonError(w, http.StatusBadRequest, "Old password supplied was incorrect")
+		return
+	}
+
+	err = h.env.UserManager.UpdatePw(u, info.NewPassword, info.ConfirmPassword)
+	if err != nil {
+		jsonError(w, http.StatusBadRequest, err.Error())
+	}
+
+	jsonSuccess(w, nil)
+
+}

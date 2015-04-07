@@ -5,6 +5,7 @@ var _ = require("underscore");
 
 var AdminUserStore = require("./stores/admin-user-store");
 var AdminUserActions = require("./actions/admin-user-actions");
+var AuthActions = require('./actions/auth-actions');
 
 var SigninForm = React.createClass({
 	handleSubmit: function(e) {
@@ -14,7 +15,7 @@ var SigninForm = React.createClass({
 		var password = this.refs.password.getDOMNode().value.trim();
 
 		console.log('handle login submit', email, password);
-		AdminUserActions.login(email, password);
+		AuthActions.login(email, password);
 	},
 
 	render: function() {
@@ -34,7 +35,7 @@ var LogoutButton = React.createClass({
 	handleSubmit: function(e) {
 		e.preventDefault();
 
-		AdminUserActions.logout();
+		AuthActions.logout();
 	},
 
 	render: function() {
@@ -44,6 +45,32 @@ var LogoutButton = React.createClass({
 					<input type="submit" value="Log Out" />
 				</form>
 			</div>
+		)
+	}
+});
+
+var ChangePasswordForm = React.createClass({
+	handleSubmit: function(e) {
+		e.preventDefault();
+
+		var currentPassword = this.refs.oldPassword.getDOMNode().value.trim();
+		var newPassword = this.refs.newPassword.getDOMNode().value.trim();
+		var repeatPassword = this.refs.confirmPassword.getDOMNode().value.trim();
+		AuthActions.changePassword(
+			currentPassword, newPassword, repeatPassword
+		);
+	},
+
+	render: function() {
+		return (
+			<div>
+				<form onSubmit={this.handleSubmit}>
+					<input type="password" name="oldPassword" ref="oldPassword" />
+					<input type="password" name="newPassword" ref="newPassword" />
+					<input type="password" name="confirmPassword" ref="confirmPassword" />
+					<input type="submit" value="Change password" />
+					</form>
+					</div>
 		)
 	}
 });
@@ -80,6 +107,7 @@ var AdminUserBox = React.createClass({
 			<div className="adminUserBox">
 				<SigninForm />
 				<LogoutButton />
+				<ChangePasswordForm />
 				<h2> Users </h2>
 				<UserList data={this.state.data} handleDelete={this.handleUserDelete}/>
 				<NewUserAdminForm onUserSubmit={this.handleUserSubmit} />

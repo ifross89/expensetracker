@@ -1,7 +1,7 @@
 var keyMirror = require('keymirror');
 
 var consts = {
-	
+
 
 }
 
@@ -25,7 +25,11 @@ module.exports = {
 
 		LOGOUT: null,
 		LOGOUT_SUCCESS: null,
-		LOGOUT_FAIL: null
+		LOGOUT_FAIL: null,
+
+		CHANGE_PASSWORD: null,
+		CHANGE_PASSWORD_SUCCESS: null,
+		CHANGE_PASSWORD_FAIL: null
 	}),
 
 	request: keyMirror({
