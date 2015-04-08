@@ -107,7 +107,7 @@ func CreateChangePasswordHandler(
 	w http.ResponseWriter,
 	r *http.Request,
 	ps httprouter.Params) (http.Handler, int, error) {
-	return logoutHandler{createHandlerVars(e, ps)}, http.StatusOK, nil
+	return changePasswordHandler{createHandlerVars(e, ps)}, http.StatusOK, nil
 }
 
 func (h changePasswordHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
