@@ -133,6 +133,7 @@ func (h changePasswordHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	err = h.env.UserManager.UpdatePw(u, info.NewPassword, info.ConfirmPassword)
 	if err != nil {
 		jsonError(w, http.StatusBadRequest, err.Error())
+		return
 	}
 
 	jsonSuccess(w, nil)

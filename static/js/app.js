@@ -224,10 +224,10 @@ var NewUserAdminForm = React.createClass({
         <input type="password" name="password" ref="password" />
         <br />
         <input type="checkbox" name="admin" ref="admin" onChange={this.handleAdminChanged} checked={this.state.admin}/>
-        <p>Admin?</p>
+        Admin?
         <br />
         <input type="checkbox" name="active" ref="active" onChange={this.handleActiveChanged} checked={this.state.active} />
-        <p>Active?</p>
+        Active?
         <br />
         <input type="submit" value="Save" />
         <br />
