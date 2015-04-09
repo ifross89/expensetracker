@@ -9,8 +9,8 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/julienschmidt/httprouter"
+	"github.com/namsral/flag"
 
-	"flag"
 	"fmt"
 	"io"
 	"net/http"
