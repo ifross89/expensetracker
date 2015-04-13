@@ -12,7 +12,6 @@ import (
 	"github.com/namsral/flag"
 
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -85,9 +84,7 @@ func start() error {
 	router := httprouter.New()
 	// Main React route
 	router.GET("/", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		f, _ := os.Open("html/index.html")
-		io.Copy(w, f)
-		f.Close()
+		http.ServeFile(w, r, "html/index.html")
 	})
 
 	// CSS, JS, etc
