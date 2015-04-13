@@ -7,6 +7,8 @@ var AdminUserStore = require("./stores/admin-user-store");
 var AdminUserActions = require("./actions/admin-user-actions");
 var AuthActions = require('./actions/auth-actions');
 
+
+
 var SigninForm = React.createClass({
   handleSubmit: function (e) {
     e.preventDefault();
@@ -183,7 +185,7 @@ var NewUserAdminForm = React.createClass({
   },
   handleAdminChanged: function () {
     var state = this.state;
-    state.admin = !state.admin
+    state.admin = !state.admin;
 
     this.setState(state);
   },

@@ -28,3 +28,6 @@ bundle.min.js
 
 # expensetracker binary
 expensetracker
+
+# gin
+gin-bin
