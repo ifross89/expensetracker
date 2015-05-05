@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"net/http"
 	"strings"
+	"fmt"
 	"time"
 )
 
@@ -25,6 +26,10 @@ type User struct {
 	Token     string     `db:"token" json:"token"`
 	Name      string     `db:"name" json:"name"`
 	CreatedAt *time.Time `db:"created_at" json:"createdAt"`
+}
+
+func (u *User) String() string {
+	return fmt.Sprintf("%s <%s>", u.Name, u.Email)
 }
 
 type Storer interface {

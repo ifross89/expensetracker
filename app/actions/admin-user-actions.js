@@ -4,8 +4,7 @@
 
 var AppDispatcher = require("../dispatcher/app-dispatcher");
 var Constants = require("../constants/expense-tracker-constants");
-var AdminUserClient = require("../clients/user-client").AdminUserClient;
-var AuthClient = require('../clients/auth-client').AuthClient;
+var AdminUserClient = require("../clients/admin-user-client").AdminUserClient;
 
 function dispatch(key, response, params) {
   var payload = {actionType: key, response: response};

@@ -6,8 +6,6 @@ var request = require("superagent");
 var _ = require("underscore");
 var $ = require("jquery");
 
-var AppDispatcher = require("../dispatcher/app-dispatcher");
-
 var API_URL = '/admin';
 var TIMEOUT = 10000;
 

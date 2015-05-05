@@ -16,6 +16,10 @@ module.exports = {
     ADMIN_USER_DELETE_SUCCESS: null,
     ADMIN_USER_DELETE_FAIL: null,
 
+    ADMIN_GROUP_LOAD: null,
+    ADMIN_GROUP_LOAD_SUCCESS: null,
+    ADMIN_GROUP_LOAD_FAIL: null,
+
     LOGIN: null,
     LOGIN_SUCCESS: null,
     LOGIN_FAIL: null,
@@ -36,6 +40,7 @@ module.exports = {
   }),
 
   store: keyMirror({
-    CHANGE_EVENT: null
-  })
-}
+    CHANGE_EVENT: null,
+    ADMIN_GROUP_CHANGE_EVENT: null
+  }),
+};

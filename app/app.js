@@ -7,7 +7,23 @@ var AdminUserStore = require("./stores/admin-user-store");
 var AdminUserActions = require("./actions/admin-user-actions");
 var AuthActions = require('./actions/auth-actions');
 
+var AvailableUsersBox = React.createClass({
+  render: function() {
+    return (<p>This is an available users box</p>)
+  }
+});
 
+var GroupUsersBox = React.createClass({
+  render: function() {
+    return (<p> This is a Group users box </p>)
+  }
+});
+
+var AdminGroupBox = React.createClass({
+  render: function() {
+    return (<p> This is an admin user box</p>);
+  }
+});
 
 var SigninForm = React.createClass({
   handleSubmit: function (e) {
@@ -113,6 +129,7 @@ var AdminUserBox = React.createClass({
         <SigninForm />
         <LogoutButton />
         <ChangePasswordForm />
+        <AdminGroupBox />
         <h2> Users </h2>
         <UserList data={this.state.data} handleDelete={this.handleUserDelete}/>
         <NewUserAdminForm onUserSubmit={this.handleUserSubmit} />
