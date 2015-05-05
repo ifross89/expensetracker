@@ -142,10 +142,39 @@ func (h adminUserDELETEHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 	err = h.env.DeleteUserById(int64(uid))
 	if err != nil {
 		jsonError(w, http.StatusInternalServerError, err.Error())
+		return
 	}
 
 	err = jsonSuccess(w, nil)
 	if err != nil {
 		fmt.Printf("Error sending success: %v", err)
 	}
+}
+
+type adminGroupGETHandker struct {
+	*HandlerVars
+}
+
+func CreateAdminGroupGETHandler(
+	e *env.Env,
+	w http.ResponseWriter,
+	r *http.Request,
+	ps http.Params) (http.Handler, int, error) {
+	return adminGroupGETHandler{createHandlerVars(e, ps)}, http.StatusOK, nil
+}
+
+func (h adminGroupGetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// Get user
+	u, err := h.env.GetSessionUser(w, r)
+	if err != nil {
+		// TODO: handle error
+		return
+	}
+
+	if !u.Active || !u.Admin {
+		// Unauthorized
+		return
+	}
+
+	// *Get the groups
 }
