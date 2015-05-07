@@ -164,6 +164,24 @@ func (m UserManager) FromSession(w http.ResponseWriter, r *http.Request) (*User,
 	return m.sess.User(w, r, m.store)
 }
 
+func (m UserManager) AdminFromSession(w http.ResponseWriter, r *http.Request) (*User, error) {
+	u, err := m.FromSession(w, r)
+
+	if err != nil {
+		return nil, errors.Annotate(err, "Error getting admin from session")
+	}
+
+	if !u.Active {
+		return nil, errors.Errorf("Error getting admin from session: user %s not active", u)
+	}
+
+	if !u.Admin {
+		return nil, errors.Errorf("Error getting admin from session: user %s not admin", u)
+	}
+
+	return u, nil
+}
+
 // Authenticate checks to see if the password supplies is the same as the
 // password that was used to create the hash
 func (m UserManager) Authenticate(u *User, pw string) error {

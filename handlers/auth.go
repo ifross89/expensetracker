@@ -4,10 +4,10 @@ import (
 	"git.ianfross.com/ifross/expensetracker/env"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/juju/errors"
 
 	"encoding/json"
 	"net/http"
-	"fmt"
 )
 
 const (
@@ -35,29 +35,25 @@ func (h loginHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	info := loginInfo{}
 	err := json.NewDecoder(r.Body).Decode(&info)
 	if err != nil {
-		fmt.Println(err)
-		jsonError(w, http.StatusBadRequest, "Username and password must be supplied")
+		jsonError(w, http.StatusBadRequest, "Username and password must be supplied", errors.Trace(err))
 		return
 	}
 
 	u, err := h.env.UserManager.ByEmail(info.Email)
 	if err != nil {
-		fmt.Println(err)
-		jsonError(w, http.StatusUnauthorized, ErrInvalidUsernamePw)
+		jsonError(w, http.StatusUnauthorized, ErrInvalidUsernamePw, errors.Trace(err))
 		return
 	}
 
 	err = h.env.UserManager.Authenticate(u, info.Password)
 	if err != nil {
-		fmt.Println(err)
-		jsonError(w, http.StatusUnauthorized, ErrInvalidUsernamePw)
+		jsonError(w, http.StatusUnauthorized, ErrInvalidUsernamePw, errors.Trace(err))
 		return
 	}
 
 	err = h.env.UserManager.LogIn(w, r, u)
 	if err != nil {
-		fmt.Println(err)
-		jsonErrorWithCodeText(w, http.StatusInternalServerError)
+		jsonErrorWithCodeText(w, http.StatusInternalServerError, errors.Trace(err))
 		return
 	}
 
@@ -79,13 +75,13 @@ func CreateLogoutHandler(
 func (h logoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_, err := h.env.UserManager.FromSession(w, r)
 	if err != nil {
-		jsonErrorWithCodeText(w, http.StatusUnauthorized)
+		jsonErrorWithCodeText(w, http.StatusUnauthorized, errors.Trace(err))
 		return
 	}
 
 	err = h.env.UserManager.LogOut(w, r)
 	if err != nil {
-		jsonErrorWithCodeText(w, http.StatusInternalServerError)
+		jsonErrorWithCodeText(w, http.StatusInternalServerError, errors.Trace(err))
 		return
 	}
 
@@ -113,26 +109,25 @@ func CreateChangePasswordHandler(
 func (h changePasswordHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	u, err := h.env.UserManager.FromSession(w, r)
 	if err != nil {
-		jsonErrorWithCodeText(w, http.StatusUnauthorized)
+		jsonErrorWithCodeText(w, http.StatusUnauthorized, errors.Trace(err))
 		return
 	}
 	info := changePasswordInfo{}
 	err = json.NewDecoder(r.Body).Decode(&info)
 	if err != nil {
-		fmt.Println(err)
-		jsonError(w, http.StatusBadRequest, "Old password, new password and password confirmation must be supplied")
+		jsonError(w, http.StatusBadRequest, "Old password, new password and password confirmation must be supplied", errors.Trace(err))
 		return
 	}
 
 	err = h.env.UserManager.Authenticate(u, info.OldPassword)
 	if err != nil {
-		jsonError(w, http.StatusBadRequest, "Old password supplied was incorrect")
+		jsonError(w, http.StatusBadRequest, "Old password supplied was incorrect", errors.Trace(err))
 		return
 	}
 
 	err = h.env.UserManager.UpdatePw(u, info.NewPassword, info.ConfirmPassword)
 	if err != nil {
-		jsonError(w, http.StatusBadRequest, err.Error())
+		jsonError(w, http.StatusBadRequest, err.Error(), errors.Trace(err))
 		return
 	}
 

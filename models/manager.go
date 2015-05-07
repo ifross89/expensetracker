@@ -20,6 +20,7 @@ type Storer interface {
 	RemoveUserFromGroup(*Group, *auth.User) error
 	ExpensesByGroup(*Group) ([]*Expense, error)
 	GroupsByUser(*auth.User) ([]*Group, error)
+	AllGroups() ([]*Group, error)
 
 	// Expense storage functions
 	InsertExpense(*Expense, []int64) error // Need to fill in Id and Assignments
@@ -77,6 +78,12 @@ func (m Manager) UpdateGroup(g *Group) error {
 // GroupByID retrieves a group from persistence by the ID supplied.
 func (m Manager) GroupByID(id int64) (*Group, error) {
 	g, err := m.store.GroupByID(id)
+	return g, errors.Trace(err)
+}
+
+// AllGroups retrieves all the groups in the database.
+func (m Manager) AllGroups() ([]*Group, error) {
+	g, err := m.store.AllGroups()
 	return g, errors.Trace(err)
 }
 

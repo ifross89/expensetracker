@@ -21,6 +21,7 @@ SELECT groups.* FROM groups
 	INNER JOIN groups_users
 		ON groups_users.group_id=groups.id
 	WHERE groups_users.user_id=:id;`
+	allGroupsStr = `SELECT * FROM groups;`
 
 	// Strings involving user group mappings
 	addUserToGroupStr      = `INSERT INTO groups_users (group_id, user_id) VALUES (:group_id, :user_id) RETURNING *;`
@@ -120,6 +121,16 @@ func (s *postgresStore) GroupsByUser(u *auth.User) ([]*models.Group, error) {
 	err := s.groupsByUserStmt.Select(&groups, u)
 	if err != nil {
 		return nil, errors.Annotate(err, "Error getting user's groups")
+	}
+
+	return groups, nil
+}
+
+func (s *postgresStore) AllGroups() ([]*models.Group, error) {
+	var groups []*models.Group
+	err := s.db.Select(&groups, allGroupsStr)
+	if err != nil {
+		return nil, errors.Annotate(err, "Error getting all groups")
 	}
 
 	return groups, nil

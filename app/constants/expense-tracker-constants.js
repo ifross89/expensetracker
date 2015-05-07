@@ -42,5 +42,5 @@ module.exports = {
   store: keyMirror({
     CHANGE_EVENT: null,
     ADMIN_GROUP_CHANGE_EVENT: null
-  }),
+  })
 };

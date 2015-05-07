@@ -2,8 +2,11 @@ package handlers
 
 import (
 	"git.ianfross.com/ifross/expensetracker/env"
+	"git.ianfross.com/ifross/expensetracker/auth"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/golang/glog"
+	"github.com/juju/errors"
 
 	"encoding/json"
 	"fmt"
@@ -19,19 +22,28 @@ type jsonResponse struct {
 	Code    int         `json:"code,omitempty"`
 }
 
-func jsonSuccess(w http.ResponseWriter, data interface{}) error {
+func jsonSuccess(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	return json.NewEncoder(w).Encode(jsonResponse{"success", data, "", http.StatusOK})
+	err := json.NewEncoder(w).Encode(jsonResponse{"success", data, "", http.StatusOK})
+	if err != nil {
+		glog.Errorf("Error encoding json in successful respone:%v", err)
+	}
 }
 
-func jsonError(w http.ResponseWriter, code int, message string) error {
+func jsonError(w http.ResponseWriter, code int, message string, err error) error {
+	if err != nil {
+		glog.Errorf("Error in handler: error=%v\nmessage=%s", errors.ErrorStack(err), message)
+	} else {
+		glog.Errorf("Error in handler: message=%s", message)
+	}
+
 	w.WriteHeader(code)
 	w.Header().Set("Content-Type", "application/json")
 	return json.NewEncoder(w).Encode(jsonResponse{"error", nil, message, code})
 }
 
-func jsonErrorWithCodeText(w http.ResponseWriter, code int) error {
-	return jsonError(w, code, http.StatusText(code))
+func jsonErrorWithCodeText(w http.ResponseWriter, code int, err error) error {
+	return jsonError(w, code, http.StatusText(code), err)
 }
 
 type HandlerVars struct {
@@ -59,28 +71,26 @@ func (a adminUsersPOSTHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	err := json.NewDecoder(r.Body).Decode(&u)
 
 	if err != nil && err != io.EOF {
-		fmt.Printf("Error: %v\n", err)
-		jsonErrorWithCodeText(w, http.StatusInternalServerError)
+		jsonErrorWithCodeText(w, http.StatusInternalServerError, errors.Trace(err))
 		return
 	}
 
 	user, err := a.env.New(u.Name, u.Email, u.Password, u.Password, u.Active, u.Admin)
 	if err != nil {
-		fmt.Printf("%v\n", err)
-		jsonError(w, http.StatusBadRequest, err.Error())
+		err = errors.Trace(err)
+		jsonError(w, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
 
 	err = a.env.Insert(user)
 	if err != nil {
-		fmt.Println(err)
-		jsonErrorWithCodeText(w, http.StatusInternalServerError)
+		jsonErrorWithCodeText(w, http.StatusInternalServerError, errors.Trace(err))
 		return
 	}
 
-	err = jsonSuccess(w, user)
+	jsonSuccess(w, user)
 	if err != nil {
-		fmt.Printf("Error encoding json: %v\n", err)
+		glog.Errorf("Error encoding json: %v\n", err)
 	}
 }
 
@@ -107,15 +117,15 @@ func CreateAdminUsersGETHandler(
 func (a adminUsersGETHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	users, err := a.env.Users()
 	if err != nil {
-		fmt.Println(err)
+		jsonErrorWithCodeText(w, http.StatusInternalServerError, errors.Trace(err))
 		return
 	}
 
 	fmt.Println("Users:", users)
 
-	err = jsonSuccess(w, users)
+	jsonSuccess(w, users)
 	if err != nil {
-		fmt.Printf("Error encoding json: %v\n", err)
+		glog.Errorf("Error encoding json: %v\n", err)
 	}
 }
 
@@ -135,46 +145,111 @@ func (h adminUserDELETEHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 	uidStr := h.ps.ByName("user_id")
 	uid, err := strconv.Atoi(uidStr)
 	if err != nil {
-		jsonError(w, http.StatusInternalServerError, err.Error())
+		jsonError(w, http.StatusInternalServerError, err.Error(), errors.Trace(err))
 		return
 	}
 
 	err = h.env.DeleteUserById(int64(uid))
 	if err != nil {
-		jsonError(w, http.StatusInternalServerError, err.Error())
+		jsonError(w, http.StatusInternalServerError, err.Error(), errors.Trace(err))
 		return
 	}
 
-	err = jsonSuccess(w, nil)
+	jsonSuccess(w, nil)
 	if err != nil {
 		fmt.Printf("Error sending success: %v", err)
 	}
 }
 
-type adminGroupGETHandker struct {
+
+type adminGroupsGETHandler struct {
 	*HandlerVars
 }
 
-func CreateAdminGroupGETHandler(
+func CreateAdminGroupsGETHandler(
 	e *env.Env,
 	w http.ResponseWriter,
 	r *http.Request,
-	ps http.Params) (http.Handler, int, error) {
-	return adminGroupGETHandler{createHandlerVars(e, ps)}, http.StatusOK, nil
+	ps httprouter.Params) (http.Handler, int, error) {
+	return adminGroupsGETHandler{createHandlerVars(e, ps)}, http.StatusOK, nil
 }
 
-func (h adminGroupGetHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h adminGroupsGETHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Get user
-	u, err := h.env.GetSessionUser(w, r)
+	_, err := h.env.AdminFromSession(w, r)
 	if err != nil {
-		// TODO: handle error
+		jsonErrorWithCodeText(w, http.StatusUnauthorized, errors.Trace(err))
 		return
 	}
 
-	if !u.Active || !u.Admin {
-		// Unauthorized
+	// User is authenticated
+	groups, err := h.env.AllGroups()
+	if err != nil {
+		jsonErrorWithCodeText(w, http.StatusInternalServerError, errors.Trace(err))
 		return
 	}
 
-	// *Get the groups
+	jsonSuccess(w, groups)
 }
+
+type adminGroupPOSTHandler struct {
+	*HandlerVars
+}
+
+func CreateAdminGroupPOSTHandler(
+	e *env.Env,
+	w http.ResponseWriter,
+	r *http.Request,
+	ps httprouter.Params) (http.Handler, int, error) {
+	return adminGroupPOSTHandler{createHandlerVars(e, ps)}, http.StatusOK, nil
+}
+
+func (h adminGroupPOSTHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	_, err := h.env.AdminFromSession(w, r)
+
+	if err != nil {
+		jsonErrorWithCodeText(w, http.StatusUnauthorized, errors.Trace(err))
+		return
+	}
+
+	newGroup := struct {
+		Name string `json:"name"`
+		Emails []string `json:"emails"`
+		}{}
+
+	err = json.NewDecoder(r.Body).Decode(&newGroup)
+
+	if err != nil && err != io.EOF {
+		jsonErrorWithCodeText(w, http.StatusInternalServerError, errors.Trace(err))
+		return
+	}
+
+
+	var users []*auth.User
+	// First make sure all of them are users
+	for _, email := range newGroup.Emails {
+		u, err := h.env.UserManager.ByEmail(email)
+		if err != nil {
+			jsonError(w, http.StatusBadRequest, fmt.Sprintf("User with email %s does not exist", email), errors.Trace(err))
+			return
+		}
+		users = append(users, u)
+	}
+
+	g, err := h.env.NewGroup(newGroup.Name)
+	if err != nil {
+		jsonErrorWithCodeText(w, http.StatusInternalServerError, errors.Trace(err))
+		return
+	}
+
+	for _, user := range users {
+		err := h.env.AddUserToGroup(g, user, false)
+		if err != nil {
+			jsonError(w, http.StatusInternalServerError, "Error creating group", errors.Trace(err))
+			return
+		}
+	}
+
+	jsonSuccess(w, g)
+}
+
