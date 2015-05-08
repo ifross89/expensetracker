@@ -268,7 +268,7 @@ type ExpenseAssignment struct {
 	ID        int64 `db:"id" json:"id"`
 	UserID    int64 `db:"user_id" json:"userId"`
 	Amount    Pence `db:"amount" json:"amount"`
-	ExpenseID int64 `db:"expense_id" json: "expenseId"`
+	ExpenseID int64 `db:"expense_id" json:"expenseId"`
 	GroupID   int64 `db:"group_id" json:"groupId"`
 }
 
