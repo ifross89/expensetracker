@@ -263,7 +263,7 @@ func CreateAdminGroupDELETEHandler(
 	w http.ResponseWriter,
 	r *http.Request,
 	ps httprouter.Params) (http.Handler, int, error) {
-	return adminGroupDELETEHandler{createHandlerVars(e, ps)}
+	return adminGroupDELETEHandler{createHandlerVars(e, ps)}, http.StatusOK, nil
 }
 
 func (h adminGroupDELETEHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -277,7 +277,7 @@ func (h adminGroupDELETEHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	// User is admin
 
 	groupId := struct {
-		Id int64 `json:"id"`
+		ID int64 `json:"id"`
 	}{}
 
 	err = json.NewDecoder(r.Body).Decode(&groupId)
@@ -286,7 +286,7 @@ func (h adminGroupDELETEHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	err = h.env.DeleteGroup(&models.Group{Id:groupId.Id})
+	err = h.env.DeleteGroup(&models.Group{ID:groupId.ID})
 	if err != nil {
 		jsonErrorWithCodeText(w, http.StatusInternalServerError, errors.Trace(err))
 		return
