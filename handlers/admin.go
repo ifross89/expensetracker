@@ -262,7 +262,7 @@ func CreateAdminGroupDELETEHandler(
 	e *env.Env,
 	w http.ResponseWriter,
 	r *http.Request,
-	ps httprouter.Params) (http.Handler, int, err) {
+	ps httprouter.Params) (http.Handler, int, error) {
 	return adminGroupDELETEHandler{createHandlerVars(e, ps)}
 }
 
