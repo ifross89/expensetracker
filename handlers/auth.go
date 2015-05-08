@@ -3,8 +3,8 @@ package handlers
 import (
 	"git.ianfross.com/ifross/expensetracker/env"
 
-	"github.com/julienschmidt/httprouter"
 	"github.com/juju/errors"
+	"github.com/julienschmidt/httprouter"
 
 	"encoding/json"
 	"net/http"
@@ -27,7 +27,7 @@ func CreateLoginHandler(
 }
 
 type loginInfo struct {
-	Email string `json:"email"`
+	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
@@ -89,8 +89,8 @@ func (h logoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type changePasswordInfo struct {
-	OldPassword string `json:"oldPassword"`
-	NewPassword string `json:"newPassword"`
+	OldPassword     string `json:"oldPassword"`
+	NewPassword     string `json:"newPassword"`
 	ConfirmPassword string `json:"confirmPassword"`
 }
 

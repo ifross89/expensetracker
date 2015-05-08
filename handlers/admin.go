@@ -1,19 +1,19 @@
 package handlers
 
 import (
-	"git.ianfross.com/ifross/expensetracker/env"
 	"git.ianfross.com/ifross/expensetracker/auth"
+	"git.ianfross.com/ifross/expensetracker/env"
 
-	"github.com/julienschmidt/httprouter"
 	"github.com/golang/glog"
 	"github.com/juju/errors"
+	"github.com/julienschmidt/httprouter"
 
 	"encoding/json"
 	"fmt"
+	"git.ianfross.com/ifross/expensetracker/models"
 	"io"
 	"net/http"
 	"strconv"
-	"git.ianfross.com/ifross/expensetracker/models"
 )
 
 type jsonResponse struct {
@@ -162,7 +162,6 @@ func (h adminUserDELETEHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 	}
 }
 
-
 type adminGroupsGETHandler struct {
 	*HandlerVars
 }
@@ -214,9 +213,9 @@ func (h adminGroupPOSTHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	}
 
 	newGroup := struct {
-		Name string `json:"name"`
+		Name   string   `json:"name"`
 		Emails []string `json:"emails"`
-		}{}
+	}{}
 
 	err = json.NewDecoder(r.Body).Decode(&newGroup)
 
@@ -224,7 +223,6 @@ func (h adminGroupPOSTHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 		jsonErrorWithCodeText(w, http.StatusInternalServerError, errors.Trace(err))
 		return
 	}
-
 
 	var users []*auth.User
 	// First make sure all of them are users
@@ -286,7 +284,7 @@ func (h adminGroupDELETEHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	err = h.env.DeleteGroup(&models.Group{ID:groupId.ID})
+	err = h.env.DeleteGroup(&models.Group{ID: groupId.ID})
 	if err != nil {
 		jsonErrorWithCodeText(w, http.StatusInternalServerError, errors.Trace(err))
 		return
@@ -317,10 +315,10 @@ func (h adminGroupPUTHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	}
 
 	group := struct {
-		Id int64 `json:"id"`
-		Name string `json:"name"`
+		Id     int64    `json:"id"`
+		Name   string   `json:"name"`
 		Emails []string `json:"emails"`
-		}{}
+	}{}
 
 	err = json.NewDecoder(r.Body).Decode(&group)
 
