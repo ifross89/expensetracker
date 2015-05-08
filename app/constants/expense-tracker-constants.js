@@ -1,6 +1,6 @@
 var keyMirror = require('keymirror');
 
-var consts = {}
+var consts = {};
 
 module.exports = {
   api: keyMirror({

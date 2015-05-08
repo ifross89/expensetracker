@@ -27,7 +27,7 @@ function createGetClientFunc(options) {
         });
     });
     return promise;
-  }
+  };
 }
 
 

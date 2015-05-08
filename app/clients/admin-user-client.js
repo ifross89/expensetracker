@@ -44,14 +44,14 @@ var AdminUserClient = {
           .send(user)
           .end((res) => {
             if (res.ok && res.body.status === "success") {
-              var user = res.body.data;
+              user = res.body.data;
               resolve(user);
             } else {
               var resBody = JSON.parse(res.text);
               resBody.user = user;
               reject(resBody);
             }
-          })
+          });
       });
       return promise;
     }
@@ -72,7 +72,7 @@ var AdminUserClient = {
           }
         });
     });
-    return promise
+    return promise;
   },
 
   del: function (userId) {

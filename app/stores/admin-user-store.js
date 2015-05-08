@@ -69,7 +69,7 @@ function deleteUser(userId) {
   var user = users[key];
   if (!user) {
     console.error("Could not get user with id=" + userId);
-    return
+    return;
   }
   pendingDelete[key] = user;
   delete users[key];
@@ -95,12 +95,13 @@ function deletePending(email) {
 AdminUserStore.appDispatch = AppDispatcher.register(function (payload) {
   var action = payload.action;
   console.log("ACTION: ", payload.action);
+  var user;
   switch (action.actionType) {
     case Constants.api.ADMIN_USERS_LOAD_SUCCESS:
       persistUsers(action.response);
       break;
     case Constants.api.ADMIN_USER_SAVE:
-      var user = action.response;
+      user = action.response;
       user.pending = true;
       if (user.id) {
         saveExistingUser(user);
@@ -114,7 +115,7 @@ AdminUserStore.appDispatch = AppDispatcher.register(function (payload) {
       break;
 
     case Constants.api.ADMIN_USER_SAVE_SUCCESS:
-      var user = action.response;
+      user = action.response;
       user.pending = false;
       saveExistingUser(user);
       break;

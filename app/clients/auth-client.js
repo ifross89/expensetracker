@@ -36,7 +36,7 @@ var AuthClient = {
             var resBody = JSON.parse(res.text);
             reject(resBody.message);
           }
-        })
+        });
     });
     return promise;
   },
@@ -60,7 +60,7 @@ var AuthClient = {
             var resBody = JSON.parse(res.text);
             reject(resBody.message);
           }
-        })
+        });
     });
     return promise;
   }
