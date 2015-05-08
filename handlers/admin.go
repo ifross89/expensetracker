@@ -13,6 +13,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"git.ianfross.com/ifross/expensetracker/models"
 )
 
 type jsonResponse struct {
@@ -253,3 +254,82 @@ func (h adminGroupPOSTHandler) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	jsonSuccess(w, g)
 }
 
+type adminGroupDELETEHandler struct {
+	*HandlerVars
+}
+
+func CreateAdminGroupDELETEHandler(
+	e *env.Env,
+	w http.ResponseWriter,
+	r *http.Request,
+	ps httprouter.Params) (http.Handler, int, err) {
+	return adminGroupDELETEHandler{createHandlerVars(e, ps)}
+}
+
+func (h adminGroupDELETEHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	_, err := h.env.AdminFromSession(w, r)
+
+	if err != nil {
+		jsonErrorWithCodeText(w, http.StatusUnauthorized, errors.Trace(err))
+		return
+	}
+
+	// User is admin
+
+	groupId := struct {
+		Id int64 `json:"id"`
+	}{}
+
+	err = json.NewDecoder(r.Body).Decode(&groupId)
+	if err != nil {
+		jsonErrorWithCodeText(w, http.StatusInternalServerError, errors.Trace(err))
+		return
+	}
+
+	err = h.env.DeleteGroup(&models.Group{Id:groupId.Id})
+	if err != nil {
+		jsonErrorWithCodeText(w, http.StatusInternalServerError, errors.Trace(err))
+		return
+	}
+
+	jsonSuccess(w, nil)
+}
+
+type adminGroupPUTHandler struct {
+	*HandlerVars
+}
+
+func CreateAdminGroupPUTHandler(
+	e *env.Env,
+	w http.ResponseWriter,
+	r *http.Request,
+	ps httprouter.Params) (http.Handler, int, error) {
+	return adminGroupPUTHandler{createHandlerVars(e, ps)}, http.StatusOK, nil
+}
+
+// Need to figure out what happens to the expenses
+func (h adminGroupPUTHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	_, err := h.env.AdminFromSession(w, r)
+
+	if err != nil {
+		jsonErrorWithCodeText(w, http.StatusUnauthorized, errors.Trace(err))
+		return
+	}
+
+	group := struct {
+		Id int64 `json:"id"`
+		Name string `json:"name"`
+		Emails []string `json:"emails"`
+		}{}
+
+	err = json.NewDecoder(r.Body).Decode(&group)
+
+	if err != nil && err != io.EOF {
+		jsonErrorWithCodeText(w, http.StatusInternalServerError, errors.Trace(err))
+		return
+	}
+
+	// TODO: finish this function
+
+	jsonError(w, http.StatusServiceUnavailable, "Unimplemented", nil)
+}
