@@ -1,20 +1,23 @@
 import React from 'react';
-import Task from './Task.jsx';
+import AdminUser from './AdminUser.jsx';
 import {Paper} from 'material-ui';
 
 export default React.createClass({
   getDefaultProps() {
     return {
-      tasks: []
+      users: []
     };
   },
 
+  componentDidMount() {
+  },
+
   render() {
-    let {tasks} = this.props;
+    let {users} = this.props;
     return (
-      <form id="task-list">
-        {tasks.map(task =>
-          <Task task={task} />
+      <form id="user-list">
+        {users.map(user =>
+          <AdminUser user={user} />
         )}
       </form>
     );

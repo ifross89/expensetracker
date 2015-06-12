@@ -1,43 +1,34 @@
 import React from 'react';
-import TodoStore from '../stores/TodoStore';
-import ActionCreator from '../actions/TodoActionCreators';
+import AdminUserStore from '../stores/AdminUserStore';
+import AdminUserActionCreator from '../actions/AdminUserActionCreators';
 import App from './App.jsx';
 
 export default React.createClass({
   _onChange() {
-    this.setState(TodoStore.getAll());
+    this.setState(AdminUserStore.getAll());
   },
 
   getInitialState() {
-    return TodoStore.getAll();
+    return AdminUserStore.getAll();
+  },
+
+  componentWillMount() {
+    return AdminUserActionCreator.getUsers();
   },
 
   componentDidMount() {
-    TodoStore.addChangeListener(this._onChange);
+    AdminUserStore.addChangeListener(this._onChange);
   },
 
   componentWillUnmount() {
-    TodoStore.removeChangeListener(this._onChange);
-  },
-
-  handleAddTask(e) {
-    let title = prompt('Enter task title:');
-    if (title) {
-      ActionCreator.addItem(title);
-    }
-  },
-
-  handleClear(e) {
-    ActionCreator.clearList();
+    AdminUserStore.removeChangeListener(this._onChange);
   },
 
   render() {
-    let {tasks} = this.state;
+    let {users} = this.state;
     return (
-      <App
-        onAddTask={this.handleAddTask}
-        onClear={this.handleClear}
-        tasks={tasks} />
+      <App users
+        ={users} />
     );
   }
 });

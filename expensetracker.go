@@ -84,11 +84,12 @@ func start() error {
 	router := httprouter.New()
 	// Main React route
 	router.GET("/", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		http.ServeFile(w, r, "html/index.html")
+		http.ServeFile(w, r, "app/dist/index.html")
 	})
 
 	// CSS, JS, etc
-	router.ServeFiles("/static/*filepath", http.Dir("static"))
+	router.ServeFiles("/js/*filepath", http.Dir("./app/dist/js"))
+	router.ServeFiles("/styles/*filepath", http.Dir("./app/dist/styles"))
 
 	// Admin Routes
 	router.GET("/admin/users", CreateHandlerWithEnv(e, handlers.CreateAdminUsersGETHandler))

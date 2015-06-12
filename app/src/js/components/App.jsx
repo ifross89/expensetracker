@@ -1,19 +1,17 @@
 import React, {PropTypes} from 'react';
-import TaskList from './TaskList.jsx';
-import {AppCanvas, RaisedButton, Styles} from 'material-ui';
+import AdminUserList from './AdminUserList.jsx';
+import {Styles} from 'material-ui';
 
 const ThemeManager = new Styles.ThemeManager();
 
 export default React.createClass({
   propTypes: {
-    tasks: PropTypes.array.isRequired,
-    onAddTask: PropTypes.func.isRequired,
-    onClear: PropTypes.func.isRequired
+    users: PropTypes.array.isRequired
   },
 
   getDefaultProps() {
     return {
-      tasks: []
+      users: []
     }
   },
 
@@ -28,7 +26,7 @@ export default React.createClass({
   },
 
   render() {
-    let {onAddTask, onClear, tasks} = this.props;
+    let {users} = this.props;
     return (
       <div className="example-page">
         <h1>Learning Flux</h1>
@@ -37,10 +35,7 @@ export default React.createClass({
           Most features are left unimplemented with clues to guide you on the learning process.
         </p>
 
-        <TaskList tasks={tasks} />
-
-        <RaisedButton label="Add Task" primary={true} onClick={onAddTask} />
-        <RaisedButton label="Clear List" secondary={true} onClick={onClear} />
+        <AdminUserList users={users} />
       </div>
     );
   }
