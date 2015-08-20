@@ -5,6 +5,7 @@ import (
 
 	"crypto/rand"
 	"encoding/base64"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -25,6 +26,10 @@ type User struct {
 	Token     string     `db:"token" json:"token"`
 	Name      string     `db:"name" json:"name"`
 	CreatedAt *time.Time `db:"created_at" json:"createdAt"`
+}
+
+func (u *User) String() string {
+	return fmt.Sprintf("%s <%s>", u.Name, u.Email)
 }
 
 type Storer interface {
@@ -159,6 +164,24 @@ func (m UserManager) FromSession(w http.ResponseWriter, r *http.Request) (*User,
 	return m.sess.User(w, r, m.store)
 }
 
+func (m UserManager) AdminFromSession(w http.ResponseWriter, r *http.Request) (*User, error) {
+	u, err := m.FromSession(w, r)
+
+	if err != nil {
+		return nil, errors.Annotate(err, "Error getting admin from session")
+	}
+
+	if !u.Active {
+		return nil, errors.Errorf("Error getting admin from session: user %s not active", u)
+	}
+
+	if !u.Admin {
+		return nil, errors.Errorf("Error getting admin from session: user %s not admin", u)
+	}
+
+	return u, nil
+}
+
 // Authenticate checks to see if the password supplies is the same as the
 // password that was used to create the hash
 func (m UserManager) Authenticate(u *User, pw string) error {
@@ -167,6 +190,10 @@ func (m UserManager) Authenticate(u *User, pw string) error {
 
 func (m UserManager) LogOut(w http.ResponseWriter, r *http.Request) error {
 	return m.sess.LogUserOut(w, r)
+}
+
+func (m UserManager) LogIn(w http.ResponseWriter, r *http.Request, u *User) error {
+	return m.sess.LogUserIn(w, r, u)
 }
 
 // Activate ensures that a user is able to log on.

@@ -24,3 +24,10 @@ _testmain.go
 .idea
 node_modules
 bundle.js
+bundle.min.js
+
+# expensetracker binary
+expensetracker
+
+# gin
+gin-bin

@@ -351,7 +351,7 @@ func testGroupCrud(st *postgresStore, t *testing.T) {
 	}
 
 	if len(groups) != 1 {
-		t.Fatalf("Expected 1 group, got %f", len(groups))
+		t.Fatalf("Expected 1 group, got %d", len(groups))
 		return
 	}
 
@@ -368,7 +368,7 @@ func testGroupCrud(st *postgresStore, t *testing.T) {
 
 	err = st.RemoveUserFromGroup(g, u)
 	if err == nil {
-		t.Fatalf("Expected error removing user from group twice", err)
+		t.Fatal("Expected error removing user from group twice", err)
 		return
 	}
 
